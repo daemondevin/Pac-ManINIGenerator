@@ -4,6 +4,10 @@
 
 This is a web application for creating and managing PortableApps Compiler (PAC) configuration files. The application provides a user-friendly interface to configure portable applications settings including app information, launch parameters, activation settings, registry entries, file operations, and services. It's built as a full-stack TypeScript application with a React frontend and Express backend, designed to simplify the complex process of creating PAC configuration files.
 
+## Build
+
+To see this in action, open the Terminal and type `npm run client:dev` and press enter.
+
 ## System Architecture
 
 ### Frontend Architecture

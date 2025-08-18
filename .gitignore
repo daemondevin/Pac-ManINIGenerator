@@ -2,5 +2,6 @@ node_modules
 dist
 .DS_Store
 server/public
+package-lock.json
 vite.config.ts.*
 *.tar.gz
