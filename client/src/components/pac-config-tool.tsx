@@ -1,6 +1,8 @@
 /** @format */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { PngIcoConverter, IConvertInputItem } from "../lib/png2icojs";
+import { Buffer } from "buffer";
 import { useTheme } from "@/hooks/use-theme";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -22,6 +24,8 @@ import {
     Sun,
     FileText,
     Book,
+    Crop,
+    Image as ImageIcon
 } from "lucide-react";
 
 // Import tab components
@@ -32,6 +36,149 @@ import RegistryTab from "./RegistryTab";
 import FilesTab from "./FilesTab";
 import ServicesTab from "./ServicesTab";
 import AdvancedTab from "./AdvancedTab";
+import { Card, CardContent } from "./ui/card";
+import { Button } from "./ui/button";
+import { on } from "events";
+
+const ImageProcessor = ({
+  onIconsGenerated,
+}: {
+  onIconsGenerated: (icons: Record<string, string>) => void;
+}) => {
+  const [originalImage, setOriginalImage] = useState<HTMLImageElement | null>(
+    null
+  );
+  const [previewIcons, setPreviewIcons] = useState<Record<string, string>>({});
+  const [cropArea, setCropArea] = useState({ x: 0, y: 0, width: 0, height: 0 });
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const converter = useRef(new PngIcoConverter()).current;
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new window.Image();
+        img.onload = () => {
+          setOriginalImage(img);
+          const size = Math.min(img.width, img.height);
+          setCropArea({
+            x: (img.width - size) / 2,
+            y: (img.height - size) / 2,
+            width: size,
+            height: size,
+          });
+        };
+        if (e.target) img.src = e.target.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const generateIcons = async () => {
+    if (!originalImage) return;
+
+    const sizes = [16, 32, 48, 128, 256, 512];
+    const icons: Record<string, string> = {};
+
+    const converterInputs: IConvertInputItem[] = [];
+
+    for (const size of sizes) {
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) continue;
+
+      ctx.drawImage(
+        originalImage,
+        cropArea.x,
+        cropArea.y,
+        cropArea.width,
+        cropArea.height,
+        0,
+        0,
+        size,
+        size
+      );
+
+      const dataUrl = canvas.toDataURL("image/png");
+      icons[`AppIcon_${size}.png`] = dataUrl;
+
+      // Prepare input for ICO conversion
+      const res = await fetch(dataUrl);
+      const blob = await res.blob();
+      if (size <= 256) {
+        converterInputs.push({ png: blob });
+      }
+    }
+
+    // Convert to ICO
+    const icoBlob = await converter.convertToBlobAsync(converterInputs);
+    icons["AppIcon.ico"] = URL.createObjectURL(icoBlob);
+
+    setPreviewIcons(icons);
+    onIconsGenerated(icons);
+  };
+
+  return (
+    <Card className="mb-6">
+      <CardContent>
+        <h3 className="text-lg font-medium mb-4">Icon Generator</h3>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleImageUpload}
+          className="hidden"
+        />
+        <Button
+          onClick={() => fileInputRef.current?.click()}
+          variant="outline"
+          className="w-full mb-4"
+        >
+          <Upload className="w-4 h-4 mr-2" />
+          Upload Image
+        </Button>
+
+        {originalImage && (
+          <div className="border rounded-lg p-4">
+            <canvas
+              width={200}
+              height={200}
+              className="border rounded"
+              style={{
+                backgroundImage: `url(${originalImage.src})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+            />
+            <Button onClick={generateIcons} className="w-full mt-4">
+              <Crop className="w-4 h-4 mr-2" />
+              Generate Icons
+            </Button>
+          </div>
+        )}
+
+        {Object.keys(previewIcons).length > 0 && (
+          <div className="mt-6">
+            <h4 className="font-medium mb-2">Preview Icons</h4>
+            <div className="grid grid-cols-3 gap-2">
+              {Object.entries(previewIcons).map(([name, src]) => (
+                <div key={name} className="text-center">
+                  <img src={src} alt={name} className="mx-auto border rounded" />
+                  <p className="text-xs mt-1">{name}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
 
 const PACConfigTool = () => {
     const { toast } = useToast();
@@ -150,13 +297,24 @@ const PACConfigTool = () => {
         registryCleanupForce: [],
         registryValueBackupDelete: [],
         registryCopyKeys: [],
-        fileWrites: [],
+        fileWrites: [] as {
+            type: string;
+            file: string;
+            section?: string;
+            key?: string;
+            value?: string;
+            entry?: string;
+            caseSensitive?: string;
+            encoding?: string;
+            find?: string;
+            replace?: string;
+        }[],
         filesMove: [] as { source: string; destination: string }[],
         filesCleanup: [],
         directoriesMove: [],
         directoriesCleanupIfEmpty: [],
         directoriesCleanupForce: [],
-        registerDLLs: [],
+        registerDLLs: [] as { progId?: string; file: string; type?: string }[],
         services: [] as { name: string; path: string; type?: string; start?: string; depend?: string; ifExists?: string }[],
         taskCleanup: [],
         language: {
@@ -166,6 +324,7 @@ const PACConfigTool = () => {
             defaultIfNotExists: "",
         },
         languageStrings: [],
+        icons: {},
     });
 
     const [activeTab, setActiveTab] = useState("appInfo");
@@ -341,13 +500,36 @@ const PACConfigTool = () => {
         }
         
         // File operations
-        if (config.filesMove.length > 0) {
+    
+    // FileWrite sections
+    config.fileWrites.forEach((write, index) => {
+    ini += `[FileWrite${index + 1}]\n`;
+    ini += `Type=${write.type}\n`;
+    ini += `File=${write.file}\n`;
+    if (write.type === 'INI') {
+        ini += `Section=${write.section}\n`;
+        ini += `Key=${write.key}\n`;
+        ini += `Value=${write.value}\n`;
+    } else if (write.type === 'ConfigWrite') {
+        ini += `Entry=${write.entry}\n`;
+        ini += `Value=${write.value}\n`;
+        if (write.caseSensitive) ini += `CaseSensitive=${write.caseSensitive}\n`;
+    } else if (write.type === 'Replace') {
+        ini += `Find=${write.find}\n`;
+        ini += `Replace=${write.replace}\n`;
+        if (write.caseSensitive) ini += `CaseSensitive=${write.caseSensitive}\n`;
+        if (write.encoding) ini += `Encoding=${write.encoding}\n`;
+    }
+    ini += '\n';
+    });
+
+    if (config.filesMove.length > 0) {
         ini += '[FilesMove]\n';
         config.filesMove.forEach(file => {
             ini += `${file.source}=${file.destination}\n`;
         });
         ini += '\n';
-        }
+    }
         
         // Services
         config.services.forEach((service, index) => {
@@ -360,7 +542,16 @@ const PACConfigTool = () => {
         if (service.ifExists) ini += `IfExists=${service.ifExists}\n`;
         ini += '\n';
         });
-        
+            
+    // DLL Registration
+    config.registerDLLs.forEach((dll, index) => {
+      ini += `[RegisterDLL${index + 1}]\n`;
+      if (dll.progId) ini += `ProgID=${dll.progId}\n`;
+      ini += `File=${dll.file}\n`;
+      if (dll.type && dll.type !== 'REGDLL') ini += `Type=${dll.type}\n`;
+      ini += '\n';
+    });
+    
         return ini;
     };
 
@@ -472,6 +663,21 @@ const PACConfigTool = () => {
             description: `Configuration saved as ${filename}`,
         });
     };
+
+  const exportIcons = () => {
+    if (Object.keys(config.icons).length === 0) {
+      alert('No icons generated. Please upload and process an image first.');
+      return;
+    }
+
+    // Create zip file with all icons (simplified - would use JSZip in real implementation)
+    Object.entries(config.icons).forEach(([filename, dataUrl]) => {
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = filename;
+      link.click();
+    });
+  };
 
     const importConfig = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -634,6 +840,7 @@ const PACConfigTool = () => {
         { id: "files", label: "Files & Dirs", icon: Folder },
         { id: "services", label: "Services", icon: Settings },
         { id: "advanced", label: "Advanced", icon: Settings },
+        { id: 'icons', label: 'Icons', icon: ImageIcon }
     ];
 
     const categories = [
@@ -996,6 +1203,12 @@ const PACConfigTool = () => {
                                 <Download className="w-4 h-4 mr-2" />
                                 Export
                             </Button>
+                            {Object.keys(config.icons).length > 0 && (
+                                <Button onClick={exportIcons} variant="outline">
+                                    <ImageIcon className="w-4 h-4 mr-2" />
+                                    Export Icons
+                                </Button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -1141,6 +1354,14 @@ const PACConfigTool = () => {
                                         Button={Button}
                                         Card={Card}
                                         CardContent={CardContent}
+                                    />
+                                )}
+                                {/* Icons Tab */}
+                                {activeTab === "icons" && (
+                                    <ImageProcessor
+                                        onIconsGenerated={ (icons) =>
+                                            setConfig((prev) => ({ ...prev, icons }))
+                                        }
                                     />
                                 )}
                             </CardContent>
