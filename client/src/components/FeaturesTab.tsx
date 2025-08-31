@@ -16,34 +16,83 @@ const FeaturesTab = ({
       {activeConfigType === 'launcher' ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div>
-            <h3 className="text-lg font-medium mb-4">Core Features</h3>
+            <h3 className="text-lg font-medium mb-4">Windows Core</h3>
             <CheckboxField
-              label="Registry Support"
+              label="Windows Registry"
               checked={config.activate.registry === 'true'}
               onChange={(checked) => setConfig(prev => ({...prev, activate: {...prev.activate, registry: checked ? 'true' : 'false'}}))}
-              description="Enable registry virtualization and management"
+              description="Enable registry support and management"
             />
             <CheckboxField
-              label="Services Support"
+              label="Windows Registry Redirection"
+              checked={config.activate.regredirection === 'true'}
+              onChange={(checked) => setConfig(prev => ({...prev, activate: {...prev.activate, regredirection: checked ? 'true' : 'false'}}))}
+              description="Enable support for enabling/disabling registry redirection."
+            />
+            <CheckboxField
+              label="Windows Registry Copy Keys"
+              checked={config.activate.regcopykeys === 'true'}
+              onChange={(checked) => setConfig(prev => ({...prev, activate: {...prev.activate, regcopykeys: checked ? 'true' : 'false'}}))}
+              description="Enable support for copying registry keys to a special hive."
+            />
+            <CheckboxField
+              label="Windows Services"
               checked={config.activate.services === 'true'}
               onChange={(checked) => setConfig(prev => ({...prev, activate: {...prev.activate, services: checked ? 'true' : 'false'}}))}
-              description="Handle Windows services"
+              description="Enable support for managing Windows services."
+            />
+            <CheckboxField
+              label="Windows Tasks"
+              checked={config.activate.tasks === 'true'}
+              onChange={(checked) => setConfig(prev => ({...prev, activate: {...prev.activate, tasks: checked ? 'true' : 'false'}}))}
+              description="Enable support for managing Windows Tasks."
+            />
+            <CheckboxField
+              label="Windows Firewall"
+              checked={config.activate.firewall === 'true'}
+              onChange={(checked) => setConfig(prev => ({...prev, activate: {...prev.activate, firewall: checked ? 'true' : 'false'}}))}
+              description="Enable support for managing Windows Firewall."
+            />
+            <h3 className="text-lg font-medium mb-4">Core Features</h3>
+            <CheckboxField
+              label="Execute As User"
+              checked={config.activate.execasuser === 'true'}
+              onChange={(checked) => setConfig(prev => ({...prev, activate: {...prev.activate, execasuser: checked ? 'true' : 'false'}}))}
+              description="For applications which need to run as normal user but need the launcher to have elevated privileges."
             />
             <CheckboxField
               label="DLL Registration"
               checked={config.activate.regDLLs === 'true'}
               onChange={(checked) => setConfig(prev => ({...prev, activate: {...prev.activate, regDLLs: checked ? 'true' : 'false'}}))}
-              description="Register/unregister COM components and DLLs"
+              description="Register/unregister COM components and DLLs."
             />
             <CheckboxField
-              label="Fonts Folder"
-              checked={config.activate.fontsFolder === 'true'}
-              onChange={(checked) => setConfig(prev => ({...prev, activate: {...prev.activate, fontsFolder: checked ? 'true' : 'false'}}))}
-              description="Support custom fonts from Data\\Fonts folder"
+              label="Drivers"
+              checked={config.activate.drivers === 'true'}
+              onChange={(checked) => setConfig(prev => ({...prev, activate: {...prev.activate, drivers: checked ? 'true' : 'false'}}))}
+              description="Enable support for managing device drivers."
+            />
+            <CheckboxField
+              label="File Associations"
+              checked={config.activate.associations === 'true'}
+              onChange={(checked) => setConfig(prev => ({...prev, activate: {...prev.activate, associations: checked ? 'true' : 'false'}}))}
+              description="Enable support for file associations, protocol handlers, context menus, and shell integration."
+            />
+            <CheckboxField
+              label="Fonts"
+              checked={config.activate.fonts === 'true'}
+              onChange={(checked) => setConfig(prev => ({...prev, activate: {...prev.activate, fonts: checked ? 'true' : 'false'}}))}
+              description="Support custom fonts"
             />
           </div>
           <div>
             <h3 className="text-lg font-medium mb-4">Runtime Dependencies</h3>
+            <CheckboxField
+              label="VC++ and .NET Runtime Support"
+              checked={config.activate.runtime === 'true'}
+              onChange={(checked) => setConfig(prev => ({...prev, activate: {...prev.activate, runtime: checked ? 'true' : 'false'}}))}
+              description="Handle VC++ and .NET runtime dependencies."
+            />
             <InputField
               label="Java Support"
               type="select"
@@ -73,6 +122,37 @@ const FeaturesTab = ({
               checked={config.activate.ghostscript === 'true'}
               onChange={(checked) => setConfig(prev => ({...prev, activate: {...prev.activate, ghostscript: checked ? 'true' : 'false'}}))}
               description="Ghostscript for PDF processing"
+            />
+            <h3 className="text-lg font-medium mb-4">Filesystem</h3>
+            <CheckboxField
+              label="Filesystem Redirection"
+              checked={config.activate.redirection === 'true'}
+              onChange={(checked) => setConfig(prev => ({...prev, activate: {...prev.activate, redirection: checked ? 'true' : 'false'}}))}
+              description="Enable support for enabling/disabling filesystem redirection."
+            />
+            <CheckboxField
+              label="Force Filesystem Redirection"
+              checked={config.activate.forceredirection === 'true'}
+              onChange={(checked) => setConfig(prev => ({...prev, activate: {...prev.activate, forceredirection: checked ? 'true' : 'false'}}))}
+              description="Enable support for checking the variable $Bit for enabling/disabling filesystem redirection."
+            />
+            <CheckboxField
+              label="Symlinks/Junctions/Hardlinks"
+              checked={config.activate.links === 'true'}
+              onChange={(checked) => setConfig(prev => ({...prev, activate: {...prev.activate, links: checked ? 'true' : 'false'}}))}
+              description="Enable support for managing symbolic links, directory junctions, and hard links."
+            />
+            <CheckboxField
+              label="Files Cleanup"
+              checked={config.activate.filescleanup === 'true'}
+              onChange={(checked) => setConfig(prev => ({...prev, activate: {...prev.activate, filescleanup: checked ? 'true' : 'false'}}))}
+              description="Enable support for [FilesCleanup]"
+            />
+            <CheckboxField
+              label="Directory Cleanup"
+              checked={config.activate.directorycleanup === 'true'}
+              onChange={(checked) => setConfig(prev => ({...prev, activate: {...prev.activate, directorycleanup: checked ? 'true' : 'false'}}))}
+              description="Enable support for [DirectoryCleanup]"
             />
           </div>
         </div>

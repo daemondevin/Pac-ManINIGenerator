@@ -2,16 +2,18 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { PngIcoConverter, IConvertInputItem } from "../lib/png2icojs";
-import { Buffer } from "buffer";
 import { useTheme } from "@/hooks/use-theme";
 import { useToast } from "@/hooks/use-toast";
 import {
-    Save,
+    Stamp,
+    Rocket,
     Upload,
+    Database,
     Download,
     Play,
     Settings,
     FolderOpen,
+    CopyPlus,
     Plus,
     Minus,
     Eye,
@@ -38,10 +40,9 @@ import ServicesTab from "./ServicesTab";
 import AdvancedTab from "./AdvancedTab";
 import { Card, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
-import { on } from "events";
 
 const ImageProcessor = ({
-  onIconsGenerated,
+    onIconsGenerated,
 }: {
   onIconsGenerated: (icons: Record<string, string>) => void;
 }) => {
@@ -57,7 +58,7 @@ const ImageProcessor = ({
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type.startsWith("image/")) {
-      const reader = new FileReader();
+      const reader = new FileReader(); 
       reader.onload = (e) => {
         const img = new window.Image();
         img.onload = () => {
@@ -139,7 +140,7 @@ const ImageProcessor = ({
           variant="outline"
           className="w-full mb-4"
         >
-          <Upload className="w-4 h-4 mr-2" />
+        <Upload className="w-4 h-4 mr-2" />
           Upload Image
         </Button>
 
@@ -162,7 +163,7 @@ const ImageProcessor = ({
           </div>
         )}
 
-        {Object.keys(previewIcons).length > 0 && (
+        {previewIcons && (
           <div className="mt-6">
             <h4 className="font-medium mb-2">Preview Icons</h4>
             <div className="grid grid-cols-3 gap-2">
@@ -296,7 +297,7 @@ const PACConfigTool = () => {
         registryCleanupIfEmpty: [],
         registryCleanupForce: [],
         registryValueBackupDelete: [],
-        registryCopyKeys: [],
+        registryCopyKeys: [] as { key: string}[],
         fileWrites: [] as {
             type: string;
             file: string;
@@ -311,12 +312,166 @@ const PACConfigTool = () => {
         }[],
         filesMove: [] as { source: string; destination: string }[],
         filesCleanup: [],
-        directoriesMove: [],
+        directoriesMove: [] as { source: string; destination: string }[],
         directoriesCleanupIfEmpty: [],
         directoriesCleanupForce: [],
         registerDLLs: [] as { progId?: string; file: string; type?: string }[],
-        services: [] as { name: string; path: string; type?: string; start?: string; depend?: string; ifExists?: string }[],
-        taskCleanup: [],
+        services: [] as { 
+            name: string; 
+            path: string; 
+            type?: string; 
+            start?: string; 
+            depend?: string; 
+            ifExists?: string 
+        }[],
+        // Fonts
+        fonts: [] as {
+            file: string;
+            name?: string; // Font family name (auto-detected if not specified)
+            scope?: string; // User, System, Temporary
+            ifExists?: string; // skip, replace, backup
+            required?: string; // true/false
+            validate?: string; // true/false
+        }[],
+        // Scheduled Tasks
+        scheduledTasks: [] as {
+            name: string;
+            command: string;
+            arguments?: string;
+            workingDir?: string;
+            schedule: string; // ONCE, MINUTE, HOURLY, DAILY, WEEKLY, MONTHLY, ONIDLE, ONSTART, ONLOGON, ONEVENT
+            modifier?: string; // Schedule modifier
+            startTime?: string; // HH:MM format
+            startDate?: string; // MM/DD/YYYY format
+            endDate?: string; // MM/DD/YYYY format
+            runAsUser?: string; // SYSTEM, current user, or specific username
+            password?: string;
+            runLevel?: string; // HIGHEST, LIMITED
+            ifExists?: string; // skip, backup, replace
+            enabled?: string; // true/false
+            hidden?: string; // true/false
+            required?: string; // true/false
+            description?: string;
+            idleTime?: string; // Idle time in minutes
+            stopOnIdle?: string; // true/false
+            restartOnIdle?: string; // true/false
+        }[],
+        // Device Drivers
+        drivers: [] as {
+            infFile: string;
+            hardwareId?: string; // Hardware ID to match
+            driverName?: string; // Display name
+            architecture?: string; // x86, x64, auto
+            signed?: string; // true/false
+            ifExists?: string; // skip, backup, replace, update
+            required?: string; // true/false
+            forceInstall?: string; // true/false
+            timeout?: string; // Installation timeout in seconds
+            category?: string; // Driver category
+            version?: string; // Expected driver version
+            publisher?: string; // Expected driver publisher
+        }[],
+        // Firewall Rules
+        firewallRules: [] as {
+            name: string;
+            direction: string; // Inbound, Outbound
+            action: string; // Allow, Block, Bypass
+            protocol?: string; // TCP, UDP, ICMPv4, ICMPv6, Any
+            localPort?: string; // Port number or range
+            remotePort?: string; // Remote port number or range
+            localAddress?: string; // Local IP address or range
+            remoteAddress?: string; // Remote IP address or range
+            program?: string; // Path to program executable
+            service?: string; // Windows service name
+            profile?: string; // Domain, Private, Public, Any (comma-separated)
+            interfaceType?: string; // Wireless, Lan, Ras, Any
+            enabled?: string; // true/false
+            ifExists?: string; // skip, backup, replace
+            required?: string; // true/false
+            description?: string;
+            edgeTraversal?: string; // true/false
+            security?: string; // Authenticate, AuthEnc, AuthNoEnc, NotRequired
+            icmpType?: string; // ICMP type number
+            icmpCode?: string; // ICMP code number
+        }[],
+        // File Associations
+        fileAssociations: [] as {
+            extension: string;
+            progId: string;
+            description: string;
+            defaultIcon?: string;
+            openCommand: string;
+            editCommand?: string;
+            printCommand?: string;
+            ifExists?: string; // skip, backup, replace
+            priority?: string; // high, normal, low
+            mimeType?: string;
+        }[],
+        // Protocol Handlers
+        protocolHandlers: [] as {
+            protocol: string;
+            progId: string;
+            description: string;
+            defaultIcon?: string;
+            openCommand: string;
+            ifExists?: string; // skip, backup, replace
+        }[],
+        // Context Menus
+        contextMenus: [] as {
+            extension: string; // File extension or * for all files
+            menuText: string;
+            menuCommand: string;
+            menuIcon?: string;
+            position?: string; // top, middle, bottom
+            ifExists?: string; // skip, backup, replace
+            condition?: string; // Registry condition to check
+        }[],
+        // Symbolic Links
+        symLinks: [] as {
+            linkPath: string;
+            targetPath: string;
+            type?: string; // file, directory, auto
+            ifExists?: string; // skip, backup, replace, update
+            required?: string; // true/false
+            relative?: string; // true/false
+            temporary?: string; // true/false
+        }[],
+        // Directory Junctions
+        junctions: [] as {
+            junctionPath: string;
+            targetPath: string;
+            ifExists?: string; // skip, backup, replace
+            required?: string; // true/false
+            temporary?: string; // true/false
+        }[],
+        // Hard Links
+        hardLinks: [] as {
+            linkPath: string;
+            targetPath: string;
+            ifExists?: string; // skip, backup, replace
+            required?: string; // true/false
+            temporary?: string; // true/false
+        }[],
+        // VC++ Runtime Dependencies
+        vcRuntimes: [] as {
+            version: string; // 2005, 2008, 2010, 2012, 2013, 2015, 2017, 2019, 2022
+            architecture: string; // x86, x64, both
+            mode?: string; // detect, install, bundle
+            action?: string; // skip, warn, install, bundle
+            source?: string; // Path to redistributable installer
+            minVersion?: string; // Minimum acceptable version
+            required?: string; // true/false
+        }[],
+        // .NET Runtime Dependencies
+        netRuntimes: [] as {
+            framework: string; // net20, net35, net40, net45, net46, net47, net48, net50, net60, net70, net80
+            architecture?: string; // x86, x64, anycpu, both
+            mode?: string; // detect, install, bundle
+            action?: string; // skip, warn, install, bundle
+            source?: string; // Path to .NET installer
+            minVersion?: string; // Minimum acceptable version
+            required?: string; // true/false
+        }[],
         language: {
             base: "%PortableApps.comLocaleglibc%",
             default: "en",
@@ -457,100 +612,301 @@ const PACConfigTool = () => {
         // Activate section
         const hasActivateOptions = Object.values(config.activate).some(v => v === 'true' || (v !== 'false' && v !== 'none' && v !== ''));
         if (hasActivateOptions) {
-        ini += '[Activate]\n';
-        Object.entries(config.activate).forEach(([key, value]) => {
-            if (value === 'true' || (key === 'java' && value !== 'none')) {
-            const iniKey = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, match => match);
-            ini += `${iniKey}=${value}\n`;
-            }
-        });
-        ini += '\n';
+            ini += '[Activate]\n';
+            Object.entries(config.activate).forEach(([key, value]) => {
+                if (value === 'true' || (key === 'java' && value !== 'none')) {
+                    const iniKey = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, match => match);
+                    ini += `${iniKey}=${value}\n`;
+                }
+            });
+            ini += '\n';
         }
         
         // Live Mode
         if (config.liveMode.copyApp === 'true') {
-        ini += '[LiveMode]\n';
-        ini += `CopyApp=${config.liveMode.copyApp}\n\n`;
+            ini += '[LiveMode]\n';
+            ini += `CopyApp=${config.liveMode.copyApp}\n\n`;
         }
         
         // Environment
         if (config.environment.length > 0) {
-        ini += '[Environment]\n';
-        config.environment.forEach(env => {
-            ini += `${env.name}=${env.value}\n`;
-        });
-        ini += '\n';
+            ini += '[Environment]\n';
+            config.environment.forEach(env => {
+                ini += `${env.name}=${env.value}\n`;
+            });
+            ini += '\n';
+        }
+
+        // Fonts
+        if (config.fonts.length > 0) {
+            config.fonts.forEach((font, index) => {
+                ini += `[Font${index + 1}]\n`;
+                ini += `File=${font.file}\n`;
+                if (font.name) ini += `Name=${font.name}\n`;
+                if (font.scope && font.scope !== 'Temporary') ini += `Scope=${font.scope}\n`;
+                if (font.ifExists && font.ifExists !== 'replace') ini += `IfExists=${font.ifExists}\n`;
+                if (font.required && font.required !== 'false') ini += `Required=${font.required}\n`;
+                if (font.validate && font.validate !== 'true') ini += `Validate=${font.validate}\n`;
+                ini += '\n';
+            });
         }
         
         // Registry sections
         if (config.registryKeys.length > 0) {
-        ini += '[RegistryKeys]\n';
-        config.registryKeys.forEach(key => {
-            ini += `${key.name}=${key.path}\n`;
-        });
-        ini += '\n';
+            ini += '[RegistryKeys]\n';
+            config.registryKeys.forEach(key => {
+                ini += `${key.name}=${key.path}\n`;
+            });
+            ini += '\n';
         }
         
         if (config.registryValues.length > 0) {
-        ini += '[RegistryValueWrite]\n';
-        config.registryValues.forEach(value => {
-            ini += `${value.key}=${value.type}:${value.value}\n`;
-        });
-        ini += '\n';
+            ini += '[RegistryValueWrite]\n';
+            config.registryValues.forEach(value => {
+                ini += `${value.key}=${value.type}:${value.value}\n`;
+            });
+            ini += '\n';
+        }
+
+        if (config.registryCopyKeys.length > 0) {
+            ini += '[RegistryCopyKeys]\n';
+            config.registryCopyKeys.forEach((value, index) => {
+                ini += `${index + 1}=${value.key}\n`;
+            });
+            ini += '\n';
+        }
+
+        // FileWrite sections
+        if (config.fileWrites.length > 0) {
+            config.fileWrites.forEach((write, index) => {
+                ini += `[FileWrite${index + 1}]\n`;
+                ini += `Type=${write.type}\n`;
+                ini += `File=${write.file}\n`;
+                if (write.type === 'INI') {
+                    ini += `Section=${write.section}\n`;
+                    ini += `Key=${write.key}\n`;
+                    ini += `Value=${write.value}\n`;
+                } else if (write.type === 'ConfigWrite') {
+                    ini += `Entry=${write.entry}\n`;
+                    ini += `Value=${write.value}\n`;
+                    if (write.caseSensitive) ini += `CaseSensitive=${write.caseSensitive}\n`;
+                } else if (write.type === 'Replace') {
+                    ini += `Find=${write.find}\n`;
+                    ini += `Replace=${write.replace}\n`;
+                    if (write.caseSensitive) ini += `CaseSensitive=${write.caseSensitive}\n`;
+                    if (write.encoding) ini += `Encoding=${write.encoding}\n`;
+                }
+                ini += '\n';
+            });
+        }
+
+        if (config.filesMove.length > 0) {
+            ini += '[FilesMove]\n';
+            config.filesMove.forEach(file => {
+                ini += `${file.source}=${file.destination}\n`;
+            });
+            ini += '\n';
         }
         
-        // File operations
-    
-    // FileWrite sections
-    config.fileWrites.forEach((write, index) => {
-    ini += `[FileWrite${index + 1}]\n`;
-    ini += `Type=${write.type}\n`;
-    ini += `File=${write.file}\n`;
-    if (write.type === 'INI') {
-        ini += `Section=${write.section}\n`;
-        ini += `Key=${write.key}\n`;
-        ini += `Value=${write.value}\n`;
-    } else if (write.type === 'ConfigWrite') {
-        ini += `Entry=${write.entry}\n`;
-        ini += `Value=${write.value}\n`;
-        if (write.caseSensitive) ini += `CaseSensitive=${write.caseSensitive}\n`;
-    } else if (write.type === 'Replace') {
-        ini += `Find=${write.find}\n`;
-        ini += `Replace=${write.replace}\n`;
-        if (write.caseSensitive) ini += `CaseSensitive=${write.caseSensitive}\n`;
-        if (write.encoding) ini += `Encoding=${write.encoding}\n`;
-    }
-    ini += '\n';
-    });
-
-    if (config.filesMove.length > 0) {
-        ini += '[FilesMove]\n';
-        config.filesMove.forEach(file => {
-            ini += `${file.source}=${file.destination}\n`;
-        });
-        ini += '\n';
-    }
-        
         // Services
-        config.services.forEach((service, index) => {
-        ini += `[Service${index + 1}]\n`;
-        ini += `Name=${service.name}\n`;
-        ini += `Path=${service.path}\n`;
-        if (service.type) ini += `Type=${service.type}\n`;
-        if (service.start) ini += `Start=${service.start}\n`;
-        if (service.depend) ini += `Depend=${service.depend}\n`;
-        if (service.ifExists) ini += `IfExists=${service.ifExists}\n`;
-        ini += '\n';
-        });
+        if (config.services.length > 0) {
+            config.services.forEach((service, index) => {
+                ini += `[Service${index + 1}]\n`;
+                ini += `Name=${service.name}\n`;
+                ini += `Path=${service.path}\n`;
+                if (service.type) ini += `Type=${service.type}\n`;
+                if (service.start) ini += `Start=${service.start}\n`;
+                if (service.depend) ini += `Depend=${service.depend}\n`;
+                if (service.ifExists) ini += `IfExists=${service.ifExists}\n`;
+                ini += '\n';
+            });
+        }
             
-    // DLL Registration
-    config.registerDLLs.forEach((dll, index) => {
-      ini += `[RegisterDLL${index + 1}]\n`;
-      if (dll.progId) ini += `ProgID=${dll.progId}\n`;
-      ini += `File=${dll.file}\n`;
-      if (dll.type && dll.type !== 'REGDLL') ini += `Type=${dll.type}\n`;
-      ini += '\n';
-    });
+        // DLL Registration
+        if (config.registerDLLs.length > 0) {
+            config.registerDLLs.forEach((dll, index) => {
+                ini += `[RegisterDLL${index + 1}]\n`;
+                if (dll.progId) ini += `ProgID=${dll.progId}\n`;
+                ini += `File=${dll.file}\n`;
+                if (dll.type && dll.type !== 'REGDLL') ini += `Type=${dll.type}\n`;
+                ini += '\n';
+            });
+        }
+
+        // Scheduled Tasks
+        if (config.scheduledTasks.length > 0) {
+            config.scheduledTasks.forEach((task, index) => {
+                ini += `[ScheduledTask${index + 1}]\n`;
+                ini += `Name=${task.name}\n`;
+                ini += `Command=${task.command}\n`;
+                if (task.arguments) ini += `Arguments=${task.arguments}\n`;
+                if (task.workingDir) ini += `WorkingDir=${task.workingDir}\n`;
+                ini += `Schedule=${task.schedule}\n`;
+                if (task.modifier) ini += `Modifier=${task.modifier}\n`;
+                if (task.startTime) ini += `StartTime=${task.startTime}\n`;
+                if (task.startDate) ini += `StartDate=${task.startDate}\n`;
+                if (task.endDate) ini += `EndDate=${task.endDate}\n`;
+                if (task.runAsUser) ini += `RunAsUser=${task.runAsUser}\n`;
+                if (task.password) ini += `Password=${task.password}\n`;
+                if (task.runLevel) ini += `RunLevel=${task.runLevel}\n`;
+                if (task.ifExists && task.ifExists !== 'replace') ini += `IfExists=${task.ifExists}\n`;
+                if (task.enabled && task.enabled !== 'true') ini += `Enabled=${task.enabled}\n`;
+                if (task.hidden && task.hidden !== 'false') ini += `Hidden=${task.hidden}\n`;
+                if (task.required && task.required !== 'false') ini += `Required=${task.required}\n`;
+                if (task.description) ini += `Description=${task.description}\n`;
+                if (task.idleTime) ini += `IdleTime=${task.idleTime}\n`;
+                if (task.stopOnIdle && task.stopOnIdle !== 'false') ini += `StopOnIdle=${task.stopOnIdle}\n`;
+                if (task.restartOnIdle && task.restartOnIdle !== 'false') ini += `RestartOnIdle=${task.restartOnIdle}\n`;
+                ini += '\n';
+            });
+        }
+
+        // Device Drivers
+        config.drivers.forEach((driver, index) => {
+            ini += `[Driver${index + 1}]\n`;
+            ini += `InfFile=${driver.infFile}\n`;
+            if (driver.hardwareId) ini += `HardwareId=${driver.hardwareId}\n`;
+            if (driver.driverName) ini += `DriverName=${driver.driverName}\n`;
+            if (driver.architecture && driver.architecture !== 'auto') ini += `Architecture=${driver.architecture}\n`;
+            if (driver.signed && driver.signed !== 'false') ini += `Signed=${driver.signed}\n`;
+            if (driver.ifExists && driver.ifExists !== 'replace') ini += `IfExists=${driver.ifExists}\n`;
+            if (driver.required && driver.required !== 'false') ini += `Required=${driver.required}\n`;
+            if (driver.forceInstall && driver.forceInstall !== 'false') ini += `ForceInstall=${driver.forceInstall}\n`;
+            if (driver.timeout && driver.timeout !== '60') ini += `Timeout=${driver.timeout}\n`;
+            if (driver.category) ini += `Category=${driver.category}\n`;
+            if (driver.version) ini += `Version=${driver.version}\n`;
+            if (driver.publisher) ini += `Publisher=${driver.publisher}\n`;
+            ini += '\n';
+        });
+
+        // Firewall Rules
+        config.firewallRules.forEach((rule, index) => {
+            ini += `[FirewallRule${index + 1}]\n`;
+            ini += `Name=${rule.name}\n`;
+            ini += `Direction=${rule.direction}\n`;
+            ini += `Action=${rule.action}\n`;
+            if (rule.protocol && rule.protocol !== 'Any') ini += `Protocol=${rule.protocol}\n`;
+            if (rule.localPort && rule.localPort !== 'Any') ini += `LocalPort=${rule.localPort}\n`;
+            if (rule.remotePort && rule.remotePort !== 'Any') ini += `RemotePort=${rule.remotePort}\n`;
+            if (rule.localAddress && rule.localAddress !== 'Any') ini += `LocalAddress=${rule.localAddress}\n`;
+            if (rule.remoteAddress && rule.remoteAddress !== 'Any') ini += `RemoteAddress=${rule.remoteAddress}\n`;
+            if (rule.program) ini += `Program=${rule.program}\n`;
+            if (rule.service) ini += `Service=${rule.service}\n`;
+            if (rule.profile && rule.profile !== 'Any') ini += `Profile=${rule.profile}\n`;
+            if (rule.interfaceType && rule.interfaceType !== 'Any') ini += `InterfaceType=${rule.interfaceType}\n`;
+            if (rule.enabled && rule.enabled !== 'true') ini += `Enabled=${rule.enabled}\n`;
+            if (rule.ifExists && rule.ifExists !== 'replace') ini += `IfExists=${rule.ifExists}\n`;
+            if (rule.required && rule.required !== 'false') ini += `Required=${rule.required}\n`;
+            if (rule.description) ini += `Description=${rule.description}\n`;
+            if (rule.edgeTraversal && rule.edgeTraversal !== 'false') ini += `EdgeTraversal=${rule.edgeTraversal}\n`;
+            if (rule.security && rule.security !== 'NotRequired') ini += `Security=${rule.security}\n`;
+            if (rule.icmpType) ini += `ICMPType=${rule.icmpType}\n`;
+            if (rule.icmpCode) ini += `ICMPCode=${rule.icmpCode}\n`;
+            ini += '\n';
+        });
+
+        // File Associations
+        config.fileAssociations.forEach((assoc, index) => {
+            ini += `[FileAssociation${index + 1}]\n`;
+            ini += `Extension=${assoc.extension}\n`;
+            ini += `ProgID=${assoc.progId}\n`;
+            ini += `Description=${assoc.description}\n`;
+            if (assoc.defaultIcon) ini += `DefaultIcon=${assoc.defaultIcon}\n`;
+            ini += `OpenCommand=${assoc.openCommand}\n`;
+            if (assoc.editCommand) ini += `EditCommand=${assoc.editCommand}\n`;
+            if (assoc.printCommand) ini += `PrintCommand=${assoc.printCommand}\n`;
+            if (assoc.ifExists && assoc.ifExists !== 'backup') ini += `IfExists=${assoc.ifExists}\n`;
+            if (assoc.priority && assoc.priority !== 'normal') ini += `Priority=${assoc.priority}\n`;
+            if (assoc.mimeType) ini += `MimeType=${assoc.mimeType}\n`;
+            ini += '\n';
+        });
+
+        // Protocol Handlers
+        config.protocolHandlers.forEach((handler, index) => {
+            ini += `[ProtocolHandler${index + 1}]\n`;
+            ini += `Protocol=${handler.protocol}\n`;
+            ini += `ProgID=${handler.progId}\n`;
+            ini += `Description=${handler.description}\n`;
+            if (handler.defaultIcon) ini += `DefaultIcon=${handler.defaultIcon}\n`;
+            ini += `OpenCommand=${handler.openCommand}\n`;
+            if (handler.ifExists && handler.ifExists !== 'replace') ini += `IfExists=${handler.ifExists}\n`;
+            ini += '\n';
+        });
+
+        // Context Menus
+        config.contextMenus.forEach((menu, index) => {
+            ini += `[ContextMenu${index + 1}]\n`;
+            ini += `Extension=${menu.extension}\n`;
+            ini += `MenuText=${menu.menuText}\n`;
+            ini += `MenuCommand=${menu.menuCommand}\n`;
+            if (menu.menuIcon) ini += `MenuIcon=${menu.menuIcon}\n`;
+            if (menu.position && menu.position !== 'middle') ini += `Position=${menu.position}\n`;
+            if (menu.ifExists && menu.ifExists !== 'replace') ini += `IfExists=${menu.ifExists}\n`;
+            if (menu.condition) ini += `Condition=${menu.condition}\n`;
+            ini += '\n';
+        });
+
+        // Symbolic Links
+        config.symLinks.forEach((link, index) => {
+            ini += `[SymLink${index + 1}]\n`;
+            ini += `LinkPath=${link.linkPath}\n`;
+            ini += `TargetPath=${link.targetPath}\n`;
+            if (link.type && link.type !== 'auto') ini += `Type=${link.type}\n`;
+            if (link.ifExists && link.ifExists !== 'backup') ini += `IfExists=${link.ifExists}\n`;
+            if (link.required && link.required !== 'false') ini += `Required=${link.required}\n`;
+            if (link.relative && link.relative !== 'false') ini += `Relative=${link.relative}\n`;
+            if (link.temporary && link.temporary !== 'true') ini += `Temporary=${link.temporary}\n`;
+            ini += '\n';
+        });
+
+        // Directory Junctions
+        config.junctions.forEach((junction, index) => {
+            ini += `[Junction${index + 1}]\n`;
+            ini += `JunctionPath=${junction.junctionPath}\n`;
+            ini += `TargetPath=${junction.targetPath}\n`;
+            if (junction.ifExists && junction.ifExists !== 'replace') ini += `IfExists=${junction.ifExists}\n`;
+            if (junction.required && junction.required !== 'false') ini += `Required=${junction.required}\n`;
+            if (junction.temporary && junction.temporary !== 'true') ini += `Temporary=${junction.temporary}\n`;
+            ini += '\n';
+        });
+
+        // Hard Links
+        config.hardLinks.forEach((link, index) => {
+            ini += `[HardLink${index + 1}]\n`;
+            ini += `LinkPath=${link.linkPath}\n`;
+            ini += `TargetPath=${link.targetPath}\n`;
+            if (link.ifExists && link.ifExists !== 'backup') ini += `IfExists=${link.ifExists}\n`;
+            if (link.required && link.required !== 'false') ini += `Required=${link.required}\n`;
+            if (link.temporary && link.temporary !== 'true') ini += `Temporary=${link.temporary}\n`;
+            ini += '\n';
+        });
+
+        // VC++ Runtime Dependencies
+        config.vcRuntimes.forEach((runtime, index) => {
+            ini += `[VCRuntime${index + 1}]\n`;
+            ini += `Version=${runtime.version}\n`;
+            ini += `Architecture=${runtime.architecture}\n`;
+            if (runtime.mode && runtime.mode !== 'detect') ini += `Mode=${runtime.mode}\n`;
+            if (runtime.action && runtime.action !== 'warn') ini += `Action=${runtime.action}\n`;
+            if (runtime.source) ini += `Source=${runtime.source}\n`;
+            if (runtime.minVersion) ini += `MinVersion=${runtime.minVersion}\n`;
+            if (runtime.required && runtime.required !== 'false') ini += `Required=${runtime.required}\n`;
+            ini += '\n';
+        });
+
+        // .NET Runtime Dependencies
+        config.netRuntimes.forEach((runtime, index) => {
+            ini += `[NETRuntime${index + 1}]\n`;
+            ini += `Framework=${runtime.framework}\n`;
+            if (runtime.architecture && runtime.architecture !== 'anycpu') ini += `Architecture=${runtime.architecture}\n`;
+            if (runtime.mode && runtime.mode !== 'detect') ini += `Mode=${runtime.mode}\n`;
+            if (runtime.action && runtime.action !== 'warn') ini += `Action=${runtime.action}\n`;
+            if (runtime.source) ini += `Source=${runtime.source}\n`;
+            if (runtime.minVersion) ini += `MinVersion=${runtime.minVersion}\n`;
+            if (runtime.required && runtime.required !== 'false') ini += `Required=${runtime.required}\n`;
+            ini += '\n';
+        });
+
     
         return ini;
     };
@@ -832,12 +1188,16 @@ const PACConfigTool = () => {
         };
         reader.readAsText(file);
     };
+
+    const launcherIcons = [];
+    const appinfoIcons = [];
+
     const tabs = [
-        { id: "appInfo", label: "App Info", icon: Info },
-        { id: "launch", label: "Launch", icon: Play },
-        { id: "activate", label: "Features", icon: Settings },
-        { id: "registry", label: "Registry", icon: FolderOpen },
-        { id: "files", label: "Files & Dirs", icon: Folder },
+        { id: "appInfo", label: activeConfigType === 'launcher' ? 'Launcher.ini' : 'AppInfo.ini', icon: activeConfigType === 'launcher' ? Rocket : FileText  },
+        { id: "launch", label: activeConfigType === 'launcher' ? 'Additional' : 'License', icon: activeConfigType === 'launcher' ? Plus : Stamp },
+        { id: "activate", label: activeConfigType === 'launcher' ? 'Activate' : 'Dependencies', icon: activeConfigType === 'launcher' ? Plus : Stamp },
+        { id: "registry", label: activeConfigType === 'launcher' ? 'Registry' : 'Team', icon: Database },
+        { id: "files", label: activeConfigType === 'launcher' ? 'Filesystem' : 'Signing', icon: Folder },
         { id: "services", label: "Services", icon: Settings },
         { id: "advanced", label: "Advanced", icon: Settings },
         { id: 'icons', label: 'Icons', icon: ImageIcon }

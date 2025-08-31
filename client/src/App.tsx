@@ -18,14 +18,12 @@ function Router() {
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="light" storageKey="pac-gui-theme">
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
           <Router />
         </TooltipProvider>
       </QueryClientProvider>
-    </ThemeProvider>
   );
 }
 

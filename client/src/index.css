@@ -121,3 +121,9 @@
 .pac-tab-inactive {
   @apply bg-gray-100 text-gray-700 hover:bg-gray-200;
 }
+
+code {
+  font-family: var(--font-mono);
+  background-color: var(--primary);
+  padding: 0.2em 0.4em;
+}

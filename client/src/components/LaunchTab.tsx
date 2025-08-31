@@ -9,7 +9,7 @@ const LaunchTab = ({
 }) => {
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-6 text-gray-900">Launch Configuration Details</h2>
+      <h2 className="text-xl font-semibold mb-6 text-gray-900">Launcher Configuration Details</h2>
       
       {activeConfigType === 'appinfo' ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
