@@ -2,15 +2,30 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { PngIcoConverter, IConvertInputItem } from "../lib/png2icojs";
+import JSZip from "jszip";
 import { useTheme } from "@/hooks/use-theme";
 import { useToast } from "@/hooks/use-toast";
 import {
     Stamp,
+    MonitorCog,
+    BrickWallFire,
+    Layers,
+    Microchip,
     Rocket,
     Upload,
+    ShieldCheck,
     Database,
     Download,
     Play,
+    Menu,
+    LinkIcon,
+    GitBranch,
+    Link,
+    Share2,
+    Link2,
+    Cpu,
+    HardDrive,
+    CalendarCheck,
     Settings,
     FolderOpen,
     CopyPlus,
@@ -27,6 +42,8 @@ import {
     FileText,
     Book,
     Crop,
+    Library,
+    ShieldPlus,
     Image as ImageIcon
 } from "lucide-react";
 
@@ -34,9 +51,12 @@ import {
 import AppInfoTab from "./AppInfoTab";
 import LaunchTab from "./LaunchTab";
 import FeaturesTab from "./FeaturesTab";
+import FirewallTab from "./FirewallTab";
+import DriversTab from "./DriversTab";
 import RegistryTab from "./RegistryTab";
 import FilesTab from "./FilesTab";
 import ServicesTab from "./ServicesTab";
+import AssociationsTab from "./AssociationsTab";
 import AdvancedTab from "./AdvancedTab";
 import { Card, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
@@ -243,18 +263,25 @@ const PACConfigTool = () => {
         activate: {
             registry: "false",
             regRedirection: "false",
+            registryValueWrite: "false",
             regCopyKeys: "false",
             redirection: "false",
             forceRedirection: "false",
             execAsUser: "false",
             services: "false",
             regDLLs: "false",
+            drivers: "false",
+            links: "false",
             tasks: "false",
             java: "none",
             jdk: "false",
             xml: "false",
             ghostscript: "false",
-            fontsFolder: "false",
+            firewall: "false",
+            runtime: "false",
+            associations: "false",
+            fonts: "false",
+            fileWriteReplace: "false",
             fileCleanup: "false",
             directoryCleanup: "false",
         },
@@ -264,12 +291,7 @@ const PACConfigTool = () => {
             usesGhostscript: "false",
             usesDotNetVersion: "",
             useStdUtils: "false",
-            installINF: "false",
-            registryValueWrite: "false",
-            fileWriteReplace: "false",
             fileLocking: "false",
-            firewall: "false",
-            junctions: "false",
             aclRegSupport: "false",
             aclDirSupport: "false",
             rmEmptyDir: "false",
@@ -317,12 +339,17 @@ const PACConfigTool = () => {
         directoriesCleanupForce: [],
         registerDLLs: [] as { progId?: string; file: string; type?: string }[],
         services: [] as { 
-            name: string; 
-            path: string; 
-            type?: string; 
-            start?: string; 
-            depend?: string; 
-            ifExists?: string 
+            name: string;
+            path: string;
+            type?: string;
+            start?: string;
+            depend?: string;
+            ifExists?: string;
+            description: string; 
+            account: string; 
+            password: string; 
+            timeout: number; 
+            critical: boolean;
         }[],
         // Fonts
         fonts: [] as {
@@ -395,7 +422,7 @@ const PACConfigTool = () => {
             icmpCode?: string; // ICMP code number
         }[],
         // File Associations
-        fileAssociations: [] as {
+        filetypes: [] as {
             extension: string;
             progId: string;
             description: string;
@@ -518,9 +545,9 @@ const PACConfigTool = () => {
         validateConfig();
     }, [config, activeConfigType]);
 
-    const addArrayItem = (section: keyof typeof config, newItem: any) => {
+    const addArrayItem = (section: string | number | symbol, newItem: any) => {
         setConfig((prev) => {
-            const currentSection = prev[section];
+            const currentSection = prev[section as keyof typeof config];
             if (Array.isArray(currentSection)) {
                 return {
                     ...prev,
@@ -528,7 +555,7 @@ const PACConfigTool = () => {
                 };
             } else {
                 // Optionally handle non-array sections or throw an error
-                console.warn(`Section "${section}" is not an array.`);
+                console.warn(`Section "${String(section)}" is not an array.`);
                 return prev;
             }
         });
@@ -806,18 +833,18 @@ const PACConfigTool = () => {
         });
 
         // File Associations
-        config.fileAssociations.forEach((assoc, index) => {
+        config.filetypes.forEach((filetype, index) => {
             ini += `[FileAssociation${index + 1}]\n`;
-            ini += `Extension=${assoc.extension}\n`;
-            ini += `ProgID=${assoc.progId}\n`;
-            ini += `Description=${assoc.description}\n`;
-            if (assoc.defaultIcon) ini += `DefaultIcon=${assoc.defaultIcon}\n`;
-            ini += `OpenCommand=${assoc.openCommand}\n`;
-            if (assoc.editCommand) ini += `EditCommand=${assoc.editCommand}\n`;
-            if (assoc.printCommand) ini += `PrintCommand=${assoc.printCommand}\n`;
-            if (assoc.ifExists && assoc.ifExists !== 'backup') ini += `IfExists=${assoc.ifExists}\n`;
-            if (assoc.priority && assoc.priority !== 'normal') ini += `Priority=${assoc.priority}\n`;
-            if (assoc.mimeType) ini += `MimeType=${assoc.mimeType}\n`;
+            ini += `Extension=${filetype.extension}\n`;
+            ini += `ProgID=${filetype.progId}\n`;
+            ini += `Description=${filetype.description}\n`;
+            if (filetype.defaultIcon) ini += `DefaultIcon=${filetype.defaultIcon}\n`;
+            ini += `OpenCommand=${filetype.openCommand}\n`;
+            if (filetype.editCommand) ini += `EditCommand=${filetype.editCommand}\n`;
+            if (filetype.printCommand) ini += `PrintCommand=${filetype.printCommand}\n`;
+            if (filetype.ifExists && filetype.ifExists !== 'backup') ini += `IfExists=${filetype.ifExists}\n`;
+            if (filetype.priority && filetype.priority !== 'normal') ini += `Priority=${filetype.priority}\n`;
+            if (filetype.mimeType) ini += `MimeType=${filetype.mimeType}\n`;
             ini += '\n';
         });
 
@@ -1026,13 +1053,43 @@ const PACConfigTool = () => {
       return;
     }
 
-    // Create zip file with all icons (simplified - would use JSZip in real implementation)
-    Object.entries(config.icons).forEach(([filename, dataUrl]) => {
-      const link = document.createElement('a');
-      link.href = dataUrl;
-      link.download = filename;
-      link.click();
-    });
+    /**
+     * Create a ZIP file containing all icons and download it
+     * @param {Object} icons - Object where keys are filenames and values are Data URLs
+     * @param {string} [zipName="AppIcons.zip"] - Name of the output ZIP file
+     */
+    async function downloadZip(icons: Record<string, string>, zipName: string = "AppIcons.zip") {
+        if (typeof JSZip === "undefined") {
+            throw new Error("JSZip is not loaded. Include it via CDN or import.");
+        }
+
+        const zip = new JSZip();
+
+        // Add each icon to the zip
+        await Promise.all(
+            Object.entries(icons).map(async ([filename, dataUrl]) => {
+            // Split out base64 part
+            const base64Data = dataUrl.split(",")[1];
+            // Add as file
+            zip.file(filename, base64Data, { base64: true });
+            })
+        );
+
+        // Generate the zip as a Blob
+        const blob = await zip.generateAsync({ type: "blob" });
+
+        // Trigger browser download
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = zipName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+    }
+
+    downloadZip(config.icons, "AppIcons.zip");
+
   };
 
     const importConfig = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1195,11 +1252,17 @@ const PACConfigTool = () => {
     const tabs = [
         { id: "appInfo", label: activeConfigType === 'launcher' ? 'Launcher.ini' : 'AppInfo.ini', icon: activeConfigType === 'launcher' ? Rocket : FileText  },
         { id: "launch", label: activeConfigType === 'launcher' ? 'Additional' : 'License', icon: activeConfigType === 'launcher' ? Plus : Stamp },
-        { id: "activate", label: activeConfigType === 'launcher' ? 'Activate' : 'Dependencies', icon: activeConfigType === 'launcher' ? Plus : Stamp },
+        { id: "activate", label: activeConfigType === 'launcher' ? 'Activate' : 'Dependencies', icon: activeConfigType === 'launcher' ? ShieldPlus : Stamp },
         { id: "registry", label: activeConfigType === 'launcher' ? 'Registry' : 'Team', icon: Database },
         { id: "files", label: activeConfigType === 'launcher' ? 'Filesystem' : 'Signing', icon: Folder },
-        { id: "services", label: "Services", icon: Settings },
-        { id: "advanced", label: "Advanced", icon: Settings },
+        { id: "services", label: "Services", icon: MonitorCog },
+        { id: "associations", label: "Associations", icon: Link },
+        { id: "firewall", label: "Firewall", icon: BrickWallFire },
+        { id: "drivers", label: "Drivers", icon: Microchip },
+        { id: "tasks", label: "Tasks", icon: CalendarCheck },
+        { id: "symlinks", label: "Symbolic Links", icon: Link2 },
+        { id: "runtime", label: "V++/.NET", icon: Cpu },
+        { id: "dlls", label: "DLLs", icon: Library },
         { id: 'icons', label: 'Icons', icon: ImageIcon }
     ];
 
@@ -1473,11 +1536,7 @@ const PACConfigTool = () => {
 
     return (
         <div
-            className={`min-h-screen ${
-                theme === "dark"
-                    ? "dark bg-gray-900"
-                    : "bg-gradient-to-br from-blue-50 to-indigo-100"
-            }`}>
+            className={`min-h-screen dark bg-gray-900`}>
             {/* Header */}
             <div className="bg-white shadow-sm border-b border-gray-200">
                 <div className="max-w-7xl mx-auto px-4 py-4">
@@ -1531,16 +1590,6 @@ const PACConfigTool = () => {
                                     <Sun className="h-4 w-4" />
                                 )}
                             </Button>
-                            <Button
-                                variant="outline"
-                                onClick={() => setShowAdvanced(!showAdvanced)}>
-                                {showAdvanced ? (
-                                    <EyeOff className="w-4 h-4 mr-2" />
-                                ) : (
-                                    <Eye className="w-4 h-4 mr-2" />
-                                )}
-                                {showAdvanced ? "Hide" : "Show"} Advanced
-                            </Button>
                             <input
                                 type="file"
                                 accept=".ini,.txt"
@@ -1576,7 +1625,7 @@ const PACConfigTool = () => {
 
             <div className="max-w-7xl mx-auto px-4 py-6">
                 {/* Validation Errors */}
-                {validationErrors.length > 0 && (
+                {/*validationErrors.length > 0 && (
                     <Card className="mb-6 bg-red-50 border-red-200">
                         <CardContent className="pt-4">
                             <div className="flex items-center mb-2">
@@ -1592,7 +1641,7 @@ const PACConfigTool = () => {
                             </ul>
                         </CardContent>
                     </Card>
-                )}
+                )*/}
 
                 <div className="flex gap-6">
                     {/* Sidebar Navigation */}
@@ -1689,13 +1738,63 @@ const PACConfigTool = () => {
                                     <ServicesTab
                                         config={config}
                                         setConfig={setConfig}
-                                        showAdvanced={showAdvanced}
+                                        activeConfigType={activeConfigType}
+                                        InputField={InputField}
+                                        CheckboxField={CheckboxField}
+                                        addArrayItem={addArrayItem}
+                                        removeArrayItem={removeArrayItem}
+                                        updateArrayItem={updateArrayItem}
+                                        Button={Button}
+                                        Card={Card}
+                                        CardContent={CardContent}
+                                    />
+                                )}
+
+                                {/* Associations Tab */}
+                                {activeTab === "associations" && (
+                                    <AssociationsTab
+                                        config={config}
+                                        setConfig={setConfig}
+                                        activeConfigType={activeConfigType}
+                                        InputField={InputField}
+                                        CheckboxField={CheckboxField}
+                                        addArrayItem={addArrayItem}
+                                        removeArrayItem={removeArrayItem}
+                                        updateArrayItem={updateArrayItem}
+                                        Button={Button}
+                                        Card={Card}
+                                        CardContent={CardContent}
+                                    />
+                                )}
+
+                                {/* Drivers Tab */}
+                                {activeTab === "drivers" && (
+                                    <DriversTab
+                                        config={config}
+                                        setConfig={setConfig}
                                         activeConfigType={activeConfigType}
                                         InputField={InputField}
                                         addArrayItem={addArrayItem}
                                         removeArrayItem={removeArrayItem}
                                         updateArrayItem={updateArrayItem}
                                         Button={Button}
+                                        Card={Card}
+                                        CardContent={CardContent}
+                                    />
+                                )}
+
+                                {/* Firewall Tab */}
+                                {activeTab === "firewall" && (
+                                    <FirewallTab
+                                        config={config}
+                                        setConfig={setConfig}
+                                        activeConfigType={activeConfigType}
+                                        InputField={InputField}
+                                        addArrayItem={addArrayItem}
+                                        removeArrayItem={removeArrayItem}
+                                        updateArrayItem={updateArrayItem}
+                                        Button={Button}
+                                        CheckboxField={CheckboxField}
                                         Card={Card}
                                         CardContent={CardContent}
                                     />
