@@ -1,6 +1,7 @@
 /** @format */
 
 import React, { useState, useEffect, useRef } from "react";
+import { INIParser } from "../lib/parseini";
 import { PngIcoConverter, IConvertInputItem } from "../lib/png2icojs";
 import JSZip from "jszip";
 import { useTheme } from "@/hooks/use-theme";
@@ -57,6 +58,7 @@ import RegistryTab from "./RegistryTab";
 import FilesTab from "./FilesTab";
 import ServicesTab from "./ServicesTab";
 import AssociationsTab from "./AssociationsTab";
+import RegDllsTab from "./RegDllsTab";
 import AdvancedTab from "./AdvancedTab";
 import { Card, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
@@ -64,141 +66,141 @@ import { Button } from "./ui/button";
 const ImageProcessor = ({
     onIconsGenerated,
 }: {
-  onIconsGenerated: (icons: Record<string, string>) => void;
+    onIconsGenerated: (icons: Record<string, string>) => void;
 }) => {
-  const [originalImage, setOriginalImage] = useState<HTMLImageElement | null>(
-    null
-  );
-  const [previewIcons, setPreviewIcons] = useState<Record<string, string>>({});
-  const [cropArea, setCropArea] = useState({ x: 0, y: 0, width: 0, height: 0 });
+    const [originalImage, setOriginalImage] = useState<HTMLImageElement | null>(
+        null
+    );
+    const [previewIcons, setPreviewIcons] = useState<Record<string, string>>({});
+    const [cropArea, setCropArea] = useState({ x: 0, y: 0, width: 0, height: 0 });
 
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const converter = useRef(new PngIcoConverter()).current;
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
+    const converter = useRef(new PngIcoConverter()).current;
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file && file.type.startsWith("image/")) {
-      const reader = new FileReader(); 
-      reader.onload = (e) => {
-        const img = new window.Image();
-        img.onload = () => {
-          setOriginalImage(img);
-          const size = Math.min(img.width, img.height);
-          setCropArea({
-            x: (img.width - size) / 2,
-            y: (img.height - size) / 2,
-            width: size,
-            height: size,
-          });
-        };
-        if (e.target) img.src = e.target.result as string;
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file && file.type.startsWith("image/")) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new window.Image();
+                img.onload = () => {
+                    setOriginalImage(img);
+                    const size = Math.min(img.width, img.height);
+                    setCropArea({
+                        x: (img.width - size) / 2,
+                        y: (img.height - size) / 2,
+                        width: size,
+                        height: size,
+                    });
+                };
+                if (e.target) img.src = e.target.result as string;
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
-  const generateIcons = async () => {
-    if (!originalImage) return;
+    const generateIcons = async () => {
+        if (!originalImage) return;
 
-    const sizes = [16, 32, 48, 128, 256, 512];
-    const icons: Record<string, string> = {};
+        const sizes = [16, 32, 48, 128, 256, 512];
+        const icons: Record<string, string> = {};
 
-    const converterInputs: IConvertInputItem[] = [];
+        const converterInputs: IConvertInputItem[] = [];
 
-    for (const size of sizes) {
-      const canvas = document.createElement("canvas");
-      canvas.width = size;
-      canvas.height = size;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) continue;
+        for (const size of sizes) {
+            const canvas = document.createElement("canvas");
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) continue;
 
-      ctx.drawImage(
-        originalImage,
-        cropArea.x,
-        cropArea.y,
-        cropArea.width,
-        cropArea.height,
-        0,
-        0,
-        size,
-        size
-      );
+            ctx.drawImage(
+                originalImage,
+                cropArea.x,
+                cropArea.y,
+                cropArea.width,
+                cropArea.height,
+                0,
+                0,
+                size,
+                size
+            );
 
-      const dataUrl = canvas.toDataURL("image/png");
-      icons[`AppIcon_${size}.png`] = dataUrl;
+            const dataUrl = canvas.toDataURL("image/png");
+            icons[`AppIcon_${size}.png`] = dataUrl;
 
-      // Prepare input for ICO conversion
-      const res = await fetch(dataUrl);
-      const blob = await res.blob();
-      if (size <= 256) {
-        converterInputs.push({ png: blob });
-      }
-    }
+            // Prepare input for ICO conversion
+            const res = await fetch(dataUrl);
+            const blob = await res.blob();
+            if (size <= 256) {
+                converterInputs.push({ png: blob });
+            }
+        }
 
-    // Convert to ICO
-    const icoBlob = await converter.convertToBlobAsync(converterInputs);
-    icons["AppIcon.ico"] = URL.createObjectURL(icoBlob);
+        // Convert to ICO
+        const icoBlob = await converter.convertToBlobAsync(converterInputs);
+        icons["AppIcon.ico"] = URL.createObjectURL(icoBlob);
 
-    setPreviewIcons(icons);
-    onIconsGenerated(icons);
-  };
+        setPreviewIcons(icons);
+        onIconsGenerated(icons);
+    };
 
-  return (
-    <Card className="mb-6">
-      <CardContent>
-        <h3 className="text-lg font-medium mb-4">Icon Generator</h3>
+    return (
+        <Card className="mb-6">
+            <CardContent>
+                <h3 className="text-lg font-medium mb-4">Icon Generator</h3>
 
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleImageUpload}
-          className="hidden"
-        />
-        <Button
-          onClick={() => fileInputRef.current?.click()}
-          variant="outline"
-          className="w-full mb-4"
-        >
-        <Upload className="w-4 h-4 mr-2" />
-          Upload Image
-        </Button>
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                />
+                <Button
+                    onClick={() => fileInputRef.current?.click()}
+                    variant="outline"
+                    className="w-full mb-4"
+                >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload Image
+                </Button>
 
-        {originalImage && (
-          <div className="border rounded-lg p-4">
-            <canvas
-              width={200}
-              height={200}
-              className="border rounded"
-              style={{
-                backgroundImage: `url(${originalImage.src})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }}
-            />
-            <Button onClick={generateIcons} className="w-full mt-4">
-              <Crop className="w-4 h-4 mr-2" />
-              Generate Icons
-            </Button>
-          </div>
-        )}
+                {originalImage && (
+                    <div className="border rounded-lg p-4">
+                        <canvas
+                            width={200}
+                            height={200}
+                            className="border rounded"
+                            style={{
+                                backgroundImage: `url(${originalImage.src})`,
+                                backgroundSize: "cover",
+                                backgroundPosition: "center",
+                            }}
+                        />
+                        <Button onClick={generateIcons} className="w-full mt-4">
+                            <Crop className="w-4 h-4 mr-2" />
+                            Generate Icons
+                        </Button>
+                    </div>
+                )}
 
-        {previewIcons && (
-          <div className="mt-6">
-            <h4 className="font-medium mb-2">Preview Icons</h4>
-            <div className="grid grid-cols-3 gap-2">
-              {Object.entries(previewIcons).map(([name, src]) => (
-                <div key={name} className="text-center">
-                  <img src={src} alt={name} className="mx-auto border rounded" />
-                  <p className="text-xs mt-1">{name}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
+                {previewIcons && (
+                    <div className="mt-6">
+                        <h4 className="font-medium mb-2">Preview Icons</h4>
+                        <div className="grid grid-cols-3 gap-2">
+                            {Object.entries(previewIcons).map(([name, src]) => (
+                                <div key={name} className="text-center">
+                                    <img src={src} alt={name} className="mx-auto border rounded" />
+                                    <p className="text-xs mt-1">{name}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
 };
 
 const PACConfigTool = () => {
@@ -247,7 +249,7 @@ const PACConfigTool = () => {
             programExecutableWhenParameters: "",
             commandLineArguments: "",
             workingDirectory: "",
-            runAsAdmin: "none",
+            runAsAdmin: "",
             cleanTemp: "false",
             singlePortableAppInstance: "false",
             singleAppInstance: "true",
@@ -316,10 +318,10 @@ const PACConfigTool = () => {
         environment: [] as { name: string; value: string }[],
         registryKeys: [] as { name: string; path: string }[],
         registryValues: [] as { key: string; type: string; value: string }[],
-        registryCleanupIfEmpty: [],
-        registryCleanupForce: [],
-        registryValueBackupDelete: [],
-        registryCopyKeys: [] as { key: string}[],
+        registryCleanupIfEmpty: [] as { path: string }[],
+        registryCleanupForce: [] as { path: string }[],
+        registryValueBackupDelete: [] as { path: string }[],
+        registryCopyKeys: [] as { path: string }[],
         fileWrites: [] as {
             type: string;
             file: string;
@@ -333,22 +335,22 @@ const PACConfigTool = () => {
             replace?: string;
         }[],
         filesMove: [] as { source: string; destination: string }[],
-        filesCleanup: [],
+        filesCleanup: [] as { source: string }[],
         directoriesMove: [] as { source: string; destination: string }[],
-        directoriesCleanupIfEmpty: [],
-        directoriesCleanupForce: [],
+        directoriesCleanupIfEmpty: [] as { source: string }[],
+        directoriesCleanupForce: [] as { source: string }[],
         registerDLLs: [] as { progId?: string; file: string; type?: string }[],
-        services: [] as { 
+        services: [] as {
             name: string;
             path: string;
             type?: string;
             start?: string;
             depend?: string;
             ifExists?: string;
-            description: string; 
-            account: string; 
-            password: string; 
-            timeout: number; 
+            description: string;
+            account: string;
+            password: string;
+            timeout: number;
             critical: boolean;
         }[],
         // Fonts
@@ -504,13 +506,14 @@ const PACConfigTool = () => {
             default: "en",
             checkIfExists: "",
             defaultIfNotExists: "",
-        },
-        languageStrings: [],
-        icons: {},
+        },        
+        languageStrings: [] as { from: string; to: string }[],
+        icons: {} as Record<string, string>,
     });
 
+    type ConfigType = typeof config;
+
     const [activeTab, setActiveTab] = useState("appInfo");
-    const [showAdvanced, setShowAdvanced] = useState(false);
     const [validationErrors, setValidationErrors] = useState<string[]>([]);
     const [activeConfigType, setActiveConfigType] = useState("launcher");
 
@@ -545,10 +548,10 @@ const PACConfigTool = () => {
         validateConfig();
     }, [config, activeConfigType]);
 
-    const addArrayItem = (section: string | number | symbol, newItem: any) => {
+    const addArrayItem = (section: keyof ConfigType, newItem: any) => {
         setConfig((prev) => {
-            const currentSection = prev[section as keyof typeof config];
-            if (Array.isArray(currentSection)) {
+            const currentSection = prev[section];
+            if (Array.isArray(currentSection)) { 
                 return {
                     ...prev,
                     [section]: [...currentSection, newItem],
@@ -561,7 +564,7 @@ const PACConfigTool = () => {
         });
     };
 
-    const removeArrayItem = (section: keyof typeof config, index: number) => {
+    const removeArrayItem = (section: keyof ConfigType, index: number) => {
         setConfig((prev) => {
             const currentSection = prev[section];
             if (Array.isArray(currentSection)) {
@@ -577,7 +580,7 @@ const PACConfigTool = () => {
     };
 
     const updateArrayItem = (
-        section: keyof typeof config,
+        section: keyof ConfigType,
         index: number,
         field: string,
         value: any
@@ -648,13 +651,13 @@ const PACConfigTool = () => {
             });
             ini += '\n';
         }
-        
+
         // Live Mode
         if (config.liveMode.copyApp === 'true') {
             ini += '[LiveMode]\n';
             ini += `CopyApp=${config.liveMode.copyApp}\n\n`;
         }
-        
+
         // Environment
         if (config.environment.length > 0) {
             ini += '[Environment]\n';
@@ -677,7 +680,7 @@ const PACConfigTool = () => {
                 ini += '\n';
             });
         }
-        
+
         // Registry sections
         if (config.registryKeys.length > 0) {
             ini += '[RegistryKeys]\n';
@@ -686,7 +689,7 @@ const PACConfigTool = () => {
             });
             ini += '\n';
         }
-        
+
         if (config.registryValues.length > 0) {
             ini += '[RegistryValueWrite]\n';
             config.registryValues.forEach(value => {
@@ -695,10 +698,34 @@ const PACConfigTool = () => {
             ini += '\n';
         }
 
+        if (config.registryCleanupIfEmpty.length > 0) {
+            ini += '[RegistryCleanupIfEmpty]\n';
+            config.registryCleanupIfEmpty.forEach((value, index) => {
+                ini += `${index + 1}=${value.path}\n`;
+            });
+            ini += '\n';
+        }
+
+        if (config.registryCleanupForce.length > 0) {
+            ini += '[RegistryCleanupForce]\n';
+            config.registryCleanupForce.forEach((value, index) => {
+                ini += `${index + 1}=${value.path}\n`;
+            });
+            ini += '\n';
+        }
+
+        if (config.registryValueBackupDelete.length > 0) {
+            ini += '[RegistryValueBackupDelete]\n';
+            config.registryValueBackupDelete.forEach((value, index) => {
+                ini += `${index + 1}=${value.path}\n`;
+            });
+            ini += '\n';
+        }
+
         if (config.registryCopyKeys.length > 0) {
             ini += '[RegistryCopyKeys]\n';
             config.registryCopyKeys.forEach((value, index) => {
-                ini += `${index + 1}=${value.key}\n`;
+                ini += `${index + 1}=${value.path}\n`;
             });
             ini += '\n';
         }
@@ -734,7 +761,7 @@ const PACConfigTool = () => {
             });
             ini += '\n';
         }
-        
+
         // Services
         if (config.services.length > 0) {
             config.services.forEach((service, index) => {
@@ -748,7 +775,7 @@ const PACConfigTool = () => {
                 ini += '\n';
             });
         }
-            
+
         // DLL Registration
         if (config.registerDLLs.length > 0) {
             config.registerDLLs.forEach((dll, index) => {
@@ -934,7 +961,7 @@ const PACConfigTool = () => {
             ini += '\n';
         });
 
-    
+
         return ini;
     };
 
@@ -949,7 +976,7 @@ const PACConfigTool = () => {
         ini += '[Format]\n';
         ini += 'Type=PortableApps.comFormat\n';
         ini += 'Version=3.9\n\n';
-        
+
         ini += '[Details]\n';
         ini += `Name=${config.appInfo.name}\n`;
         ini += `AppId=${config.appInfo.appId}\n`;
@@ -961,21 +988,21 @@ const PACConfigTool = () => {
         if (config.appInfo.trademarks) ini += `Trademarks=${config.appInfo.trademarks}\n`;
         if (config.appInfo.installType) ini += `InstallType=${config.appInfo.installType}\n`;
         ini += '\n';
-        
+
         if (config.appInfo.developer || config.appInfo.contributors || config.appInfo.creator || config.appInfo.certSigning === 'true') {
-        ini += '[Team]\n';
-        if (config.appInfo.developer) ini += `Developer=${config.appInfo.developer}\n`;
-        if (config.appInfo.contributors) ini += `Contributors=${config.appInfo.contributors}\n`;
-        if (config.appInfo.creator) ini += `Creator=${config.appInfo.creator}\n`;
-        if (config.appInfo.certSigning === 'true') {
-            ini += `CertSigning=${config.appInfo.certSigning}\n`;
-            ini += `CertAlgorithm=${config.appInfo.certAlgorithm}\n`;
-            ini += `CertExtension=${config.appInfo.certExtension}\n`;
-            ini += `CertTimestamp=${config.appInfo.certTimestamp}\n`;
+            ini += '[Team]\n';
+            if (config.appInfo.developer) ini += `Developer=${config.appInfo.developer}\n`;
+            if (config.appInfo.contributors) ini += `Contributors=${config.appInfo.contributors}\n`;
+            if (config.appInfo.creator) ini += `Creator=${config.appInfo.creator}\n`;
+            if (config.appInfo.certSigning === 'true') {
+                ini += `CertSigning=${config.appInfo.certSigning}\n`;
+                ini += `CertAlgorithm=${config.appInfo.certAlgorithm}\n`;
+                ini += `CertExtension=${config.appInfo.certExtension}\n`;
+                ini += `CertTimestamp=${config.appInfo.certTimestamp}\n`;
+            }
+            ini += '\n';
         }
-        ini += '\n';
-        }
-        
+
         ini += "[License]\n";
         ini += `Shareable=${config.appInfo.shareable}\n`;
         ini += `OpenSource=${config.appInfo.openSource}\n`;
@@ -988,23 +1015,23 @@ const PACConfigTool = () => {
         ini += "[Version]\n";
         ini += `PackageVersion=${config.appInfo.packageVersion}\n`;
         ini += `DisplayVersion=${config.appInfo.displayVersion}\n\n`;
-    
+
         if (config.appInfo.plugins) {
-        ini += '[SpecialPaths]\n';
-        ini += `Plugins=${config.appInfo.plugins}\n\n`;
+            ini += '[SpecialPaths]\n';
+            ini += `Plugins=${config.appInfo.plugins}\n\n`;
         }
-        
+
         // Dependencies
         const hasDependencies = Object.values(config.dependencies).some(v => v === 'true' || (v !== 'false' && v !== ''));
         if (hasDependencies) {
-        ini += '[Dependencies]\n';
-        Object.entries(config.dependencies).forEach(([key, value]) => {
-            if (value === 'true' || (value !== 'false' && value !== '')) {
-            const iniKey = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, match => match);
-            ini += `${iniKey}=${value}\n`;
-            }
-        });
-        ini += '\n';
+            ini += '[Dependencies]\n';
+            Object.entries(config.dependencies).forEach(([key, value]) => {
+                if (value === 'true' || (value !== 'false' && value !== '')) {
+                    const iniKey = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, match => match);
+                    ini += `${iniKey}=${value}\n`;
+                }
+            });
+            ini += '\n';
         }
 
         ini += "[Control]\n";
@@ -1017,12 +1044,12 @@ const PACConfigTool = () => {
     };
 
     const exportConfig = () => {
-        if (!validateConfig()) {
+        /*if (!validateConfig()) {
             alert(
                 "Please fix validation errors before generating configuration"
             );
             return;
-        }
+        }*/
 
         const content =
             activeConfigType === "launcher"
@@ -1047,50 +1074,50 @@ const PACConfigTool = () => {
         });
     };
 
-  const exportIcons = () => {
-    if (Object.keys(config.icons).length === 0) {
-      alert('No icons generated. Please upload and process an image first.');
-      return;
-    }
-
-    /**
-     * Create a ZIP file containing all icons and download it
-     * @param {Object} icons - Object where keys are filenames and values are Data URLs
-     * @param {string} [zipName="AppIcons.zip"] - Name of the output ZIP file
-     */
-    async function downloadZip(icons: Record<string, string>, zipName: string = "AppIcons.zip") {
-        if (typeof JSZip === "undefined") {
-            throw new Error("JSZip is not loaded. Include it via CDN or import.");
+    const exportIcons = () => {
+        if (Object.keys(config.icons).length === 0) {
+            alert('No icons generated. Please upload and process an image first.');
+            return;
         }
 
-        const zip = new JSZip();
+        /**
+         * Create a ZIP file containing all icons and download it
+         * @param {Object} icons - Object where keys are filenames and values are Data URLs
+         * @param {string} [zipName="AppIcons.zip"] - Name of the output ZIP file
+         */
+        async function downloadZip(icons: Record<string, string>, zipName: string = "AppIcons.zip") {
+            if (typeof JSZip === "undefined") {
+                throw new Error("JSZip is not loaded. Include it via CDN or import.");
+            }
 
-        // Add each icon to the zip
-        await Promise.all(
-            Object.entries(icons).map(async ([filename, dataUrl]) => {
-            // Split out base64 part
-            const base64Data = dataUrl.split(",")[1];
-            // Add as file
-            zip.file(filename, base64Data, { base64: true });
-            })
-        );
+            const zip = new JSZip();
 
-        // Generate the zip as a Blob
-        const blob = await zip.generateAsync({ type: "blob" });
+            // Add each icon to the zip
+            await Promise.all(
+                Object.entries(icons).map(async ([filename, dataUrl]) => {
+                    // Split out base64 part
+                    const base64Data = dataUrl.split(",")[1];
+                    // Add as file
+                    zip.file(filename, base64Data, { base64: true });
+                })
+            );
 
-        // Trigger browser download
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = zipName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(link.href);
-    }
+            // Generate the zip as a Blob
+            const blob = await zip.generateAsync({ type: "blob" });
 
-    downloadZip(config.icons, "AppIcons.zip");
+            // Trigger browser download
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = zipName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+        }
 
-  };
+        downloadZip(config.icons, "AppIcons.zip");
+
+    };
 
     const importConfig = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -1100,15 +1127,29 @@ const PACConfigTool = () => {
         reader.onload = (e) => {
             const content = e.target?.result as string;
             if (!content) return;
+            console.log(content);
 
-            // Split the content into lines and remove comments and empty lines
+            const parser = new INIParser({
+                autoType: false,
+                preserveKeyCase: true,
+                preserveSectionCase: true
+            });
+            const parsed = parser.parse(content);
+            console.log(parsed);
+            const newConfig = { ...config };
+            let isAppInfo = false;
+            if (parsed["Format"] && parsed["Format"]["Type"] === "PortableApps.comFormat") {
+                isAppInfo = true;
+                setActiveConfigType("appinfo");
+            } else {
+                setActiveConfigType("launcher");
+            }
+            /*/ Split the content into lines and remove comments and empty lines
             const lines = content.split("\n")
                 .map(line => line.trim())
                 .filter(line => line && !line.startsWith(";"));
 
             let currentSection = "";
-            const newConfig = { ...config };
-            let isAppInfo = false;
 
             // Detect if this is an AppInfo.ini file
             if (content.includes("[Format]") && content.includes("Type=PortableApps.comFormat")) {
@@ -1116,19 +1157,85 @@ const PACConfigTool = () => {
                 setActiveConfigType("appinfo");
             } else {
                 setActiveConfigType("launcher");
-            }
+            }*/
 
             // Reset arrays that will be populated
             if (!isAppInfo) {
                 newConfig.environment = [];
-                newConfig.services = [];
-                newConfig.filesMove = [];
                 newConfig.registryKeys = [];
                 newConfig.registryValues = [];
+                newConfig.registryCleanupIfEmpty = [];
+                newConfig.registryCleanupForce = [];
+                newConfig.registryValueBackupDelete = [];
+                newConfig.registryCopyKeys = [];
+                newConfig.fileWrites = [];
+                newConfig.filesMove = [];
+                newConfig.registerDLLs = [];
+                newConfig.scheduledTasks = [];
+                newConfig.drivers = [];
+                newConfig.firewallRules = [];
+                newConfig.filetypes = [];
+                newConfig.protocolHandlers = [];
+                newConfig.contextMenus = [];
+                newConfig.symLinks = [];
+                newConfig.junctions = [];
+                newConfig.hardLinks = [];
+                newConfig.vcRuntimes = [];
+                newConfig.netRuntimes = [];
+                newConfig.fonts = [];
+                newConfig.services = [];
+                newConfig.liveMode = {
+                    copyApp: "false"
+                };
+                newConfig.launch = {
+                    appName: "",
+                    programExecutable: "",
+                    programExecutable64: "",
+                    programExecutableWhenParameters: "",
+                    commandLineArguments: "",
+                    workingDirectory: "",
+                    runAsAdmin: "",
+                    cleanTemp: "",
+                    singlePortableAppInstance: "",
+                    singleAppInstance: "",
+                    closeEXE: "",
+                    splashTime: "",
+                    launchAfterSplashScreen: "",
+                    waitForProgram: "",
+                    waitForOtherInstances: "",
+                    refreshShellIcons: "",
+                    hideCommandLineWindow: "",
+                    noSpacesInPath: ""
+                };
+                newConfig.activate = {
+                    registry: "",
+                    regRedirection: "",
+                    registryValueWrite: "",
+                    regCopyKeys: "",
+                    redirection: "",
+                    forceRedirection: "",
+                    execAsUser: "",
+                    services: "",
+                    regDLLs: "",
+                    drivers: "",
+                    links: "",
+                    tasks: "",
+                    java: "",
+                    jdk: "",
+                    xml: "",
+                    ghostscript: "",
+                    firewall: "",
+                    runtime: "",
+                    associations: "",
+                    fonts: "",
+                    fileWriteReplace: "",
+                    fileCleanup: "",
+                    directoryCleanup: ""
+                };
             }
 
-            let currentService: any = null;
-
+            //let currentService: any = null;
+            /*
             lines.forEach(line => {
                 // Section header
                 if (line.startsWith("[") && line.endsWith("]")) {
@@ -1148,7 +1255,7 @@ const PACConfigTool = () => {
 
                 const keyTrim = key.trim();
                 const valueTrim = value.trim();
-
+            
                 if (isAppInfo) {
                     switch (currentSection.toLowerCase()) {
                         case "details":
@@ -1235,22 +1342,260 @@ const PACConfigTool = () => {
                             break;
                     }
                 }
-            });
+            });*/
+
+            // Map the parsed INI data to our config structure
+            //const newConfig = { ...config };
+
+            // Handle AppInfo.ini sections
+            if (isAppInfo) {
+                if (parsed.Details) {
+                    Object.assign(newConfig.appInfo, parsed.Details);
+                }
+                if (parsed.Version) {
+                    newConfig.appInfo.packageVersion = parsed.Version.PackageVersion?.toString() || "";
+                    newConfig.appInfo.displayVersion = parsed.Version.DisplayVersion?.toString() || "";
+                }
+                if (parsed.License) {
+                    newConfig.appInfo.shareable = parsed.License.Shareable?.toString() || "";
+                    newConfig.appInfo.openSource = parsed.License.OpenSource?.toString() || "";
+                    newConfig.appInfo.freeware = parsed.License.Freeware?.toString() || "";
+                    newConfig.appInfo.commercialUse = parsed.License.CommercialUse?.toString() || "";
+                    newConfig.appInfo.eulaVersion = parsed.License.EULAVersion?.toString() || "";
+                }
+                if (parsed.Control) {
+                    newConfig.appInfo.icons = parsed.Control.Icons?.toString() || "";
+                    newConfig.appInfo.start = parsed.Control.Start?.toString() || "";
+                    newConfig.appInfo.extractIcon = parsed.Control.ExtractIcon?.toString() || "";
+                }
+            } else {
+                if (parsed.Launch) {
+                    Object.assign(newConfig.launch, parsed.Launch);
+                }
+                if (parsed.Activate) {
+                    Object.assign(newConfig.activate, parsed.Activate);
+                }
+                if (parsed.Environment) {
+                    newConfig.environment = Object.entries(parsed.Environment).map(([name, value]) => ({
+                        name,
+                        value: value.toString()
+                    }));
+                }
+                if (parsed.RegistryKeys) {
+                    // RegistryKeys is usually an object, but you want an array of { name, path }
+                    newConfig.registryKeys = Object.entries(parsed.RegistryKeys).map(([name, path]) => ({
+                        name,
+                        path: path.toString()
+                    }));
+                }
+                if (parsed.RegistryValueWrite) {
+                    // RegistryValueWrite: { key: { type: value } }
+                    newConfig.registryValues = Object.entries(parsed.RegistryValueWrite).map(([key, val]) => {
+                        // val might be an object: { type: value }
+                        if (typeof val === 'object' && val !== null) {
+                            const [type, value] = Object.entries(val)[0];
+                            return { key, type, value: value.toString() };
+                        }
+                        // fallback: treat as string
+                        return { key, type: '', value: val.toString() };
+                    });
+                }
+                if (parsed.RegistryCleanupIfEmpty) {
+                    newConfig.registryCleanupIfEmpty = Object.entries(parsed.RegistryCleanupIfEmpty).map(([path]) => ({ path }));
+                }
+                if (parsed.RegistryCleanupForce) {
+                    newConfig.registryCleanupForce = Object.entries(parsed.RegistryCleanupForce).map(([path]) => ({ path }));
+                }
+                if (parsed.RegistryValueBackupDelete) {
+                    newConfig.registryValueBackupDelete = Object.entries(parsed.RegistryValueBackupDelete).map(([path]) => ({ path }));
+                }
+                if (parsed.RegistryCopyKeys) {
+                    newConfig.registryCopyKeys = Object.entries(parsed.RegistryCopyKeys).map(([path]) => ({ path }));
+                }
+                if (parsed.FileWrites) {
+                    newConfig.fileWrites = Object.entries(parsed.FileWrites).map(([file, props]) => {
+                        const baseProps = {
+                            type: typeof props === 'object' ? (props as any).type || 'Replace' : 'Replace',
+                            file
+                        };
+                        if (typeof props === 'object') {
+                            const { section, key, value, entry, caseSensitive, encoding, find, replace } = props as any;
+                            return {
+                                ...baseProps,
+                                ...(section ? { section } : {}),
+                                ...(key ? { key } : {}),
+                                ...(value ? { value } : {}),
+                                ...(entry ? { entry } : {}),
+                                ...(caseSensitive ? { caseSensitive } : {}),
+                                ...(encoding ? { encoding } : {}),
+                                ...(find ? { find } : {}),
+                                ...(replace ? { replace } : {})
+                            };
+                        }
+                        return baseProps;
+                    });
+                }
+                if (parsed.FilesMove) {
+                    newConfig.filesMove = Object.entries(parsed.FilesMove).map(([source, destination]) => ({
+                        source,
+                        destination: destination.toString()
+                    }));
+                }
+                if (parsed.RegisterDLLs) {
+                    newConfig.registerDLLs = Object.entries(parsed.RegisterDLLs).map(([key, props]) => ({
+                        ...(typeof props === 'object' ? props : {}),
+                        file: key
+                    }));
+                }
+                if (parsed.ScheduledTasks) {
+                    newConfig.scheduledTasks = Object.entries(parsed.ScheduledTasks).map(([name, props]) => ({
+                        name,
+                        command: typeof props === 'object' ? (props as any).command || '' : '',
+                        schedule: typeof props === 'object' ? (props as any).schedule || 'ONCE' : 'ONCE',
+                        ...(typeof props === 'object' ? props : {})
+                    }));
+                }
+                if (parsed.Drivers) {
+                    newConfig.drivers = Object.entries(parsed.Drivers).map(([infFile, props]) => ({
+                        infFile,
+                        ...(typeof props === 'object' ? props : {})
+                    }));
+                }
+                if (parsed.FirewallRules) {
+                    newConfig.firewallRules = Object.entries(parsed.FirewallRules).map(([name, props]) => ({
+                        name,
+                        direction: typeof props === 'object' ? (props as any).direction || 'Inbound' : 'Inbound',
+                        action: typeof props === 'object' ? (props as any).action || 'Allow' : 'Allow',
+                        ...(typeof props === 'object' ? props : {})
+                    }));
+                }
+                if (parsed.Filetypes) {
+                    newConfig.filetypes = Object.entries(parsed.Filetypes).map(([extension, props]) => ({
+                        extension,
+                        progId: typeof props === 'object' ? (props as any).progId || '' : '',
+                        description: typeof props === 'object' ? (props as any).description || '' : '',
+                        openCommand: typeof props === 'object' ? (props as any).openCommand || '' : '',
+                        defaultIcon: typeof props === 'object' ? (props as any).defaultIcon : undefined,
+                        editCommand: typeof props === 'object' ? (props as any).editCommand : undefined,
+                        printCommand: typeof props === 'object' ? (props as any).printCommand : undefined,
+                        ifExists: typeof props === 'object' ? (props as any).ifExists : undefined,
+                        priority: typeof props === 'object' ? (props as any).priority : undefined,
+                        mimeType: typeof props === 'object' ? (props as any).mimeType : undefined
+                    }));
+                }
+                if (parsed.ProtocolHandlers) {
+                    newConfig.protocolHandlers = Object.entries(parsed.ProtocolHandlers).map(([protocol, props]) => ({
+                        protocol,
+                        progId: typeof props === 'object' ? (props as any).progId || '' : '',
+                        description: typeof props === 'object' ? (props as any).description || '' : '',
+                        defaultIcon: typeof props === 'object' ? (props as any).defaultIcon : undefined,
+                        openCommand: typeof props === 'object' ? (props as any).openCommand || '' : '',
+                        ifExists: typeof props === 'object' ? (props as any).ifExists : undefined
+                    }));
+                }
+                if (parsed.ContextMenus) {
+                    newConfig.contextMenus = Object.entries(parsed.ContextMenus).map(([extension, props]) => ({
+                        extension,
+                        menuText: typeof props === 'object' ? (props as any).menuText || '' : '',
+                        menuCommand: typeof props === 'object' ? (props as any).menuCommand || '' : '',
+                        menuIcon: typeof props === 'object' ? (props as any).menuIcon : undefined,
+                        position: typeof props === 'object' ? (props as any).position : undefined,
+                        ifExists: typeof props === 'object' ? (props as any).ifExists : undefined,
+                        condition: typeof props === 'object' ? (props as any).condition : undefined
+                    }));
+                }
+                if (parsed.SymLinks) {
+                    newConfig.symLinks = Object.entries(parsed.SymLinks).map(([linkPath, props]) => ({
+                        linkPath,
+                        targetPath: typeof props === 'object' ? (props as any).targetPath || '' : '',
+                        type: typeof props === 'object' ? (props as any).type : undefined,
+                        ifExists: typeof props === 'object' ? (props as any).ifExists : undefined,
+                        required: typeof props === 'object' ? (props as any).required : undefined,
+                        relative: typeof props === 'object' ? (props as any).relative : undefined,
+                        temporary: typeof props === 'object' ? (props as any).temporary : undefined
+                    }));
+                }
+                if (parsed.Junctions) {
+                    newConfig.junctions = Object.entries(parsed.Junctions).map(([junctionPath, props]) => ({
+                        junctionPath,
+                        targetPath: typeof props === 'object' ? (props as any).targetPath || '' : '',
+                        ifExists: typeof props === 'object' ? (props as any).ifExists : undefined,
+                        required: typeof props === 'object' ? (props as any).required : undefined,
+                        temporary: typeof props === 'object' ? (props as any).temporary : undefined
+                    }));
+                }
+                if (parsed.HardLinks) {
+                    newConfig.hardLinks = Object.entries(parsed.HardLinks).map(([linkPath, props]) => ({
+                        linkPath,
+                        targetPath: typeof props === 'object' ? (props as any).targetPath || '' : '',
+                        ifExists: typeof props === 'object' ? (props as any).ifExists : undefined,
+                        required: typeof props === 'object' ? (props as any).required : undefined,
+                        temporary: typeof props === 'object' ? (props as any).temporary : undefined
+                    }));
+                }
+                if (parsed.VCRuntimes) {
+                    newConfig.vcRuntimes = Object.entries(parsed.VCRuntimes).map(([version, props]) => ({
+                        version,
+                        architecture: typeof props === 'object' ? (props as any).architecture || '' : '',
+                        mode: typeof props === 'object' ? (props as any).mode : undefined,
+                        action: typeof props === 'object' ? (props as any).action : undefined,
+                        source: typeof props === 'object' ? (props as any).source : undefined,
+                        minVersion: typeof props === 'object' ? (props as any).minVersion : undefined,
+                        required: typeof props === 'object' ? (props as any).required : undefined
+                    }));
+                }
+                if (parsed.NETRuntimes) {
+                    newConfig.netRuntimes = Object.entries(parsed.NETRuntimes).map(([framework, props]) => ({
+                        framework,
+                        architecture: typeof props === 'object' ? (props as any).architecture : undefined,
+                        mode: typeof props === 'object' ? (props as any).mode : undefined,
+                        action: typeof props === 'object' ? (props as any).action : undefined,
+                        source: typeof props === 'object' ? (props as any).source : undefined,
+                        minVersion: typeof props === 'object' ? (props as any).minVersion : undefined,
+                        required: typeof props === 'object' ? (props as any).required : undefined
+                    }));
+                }
+                if (parsed.Fonts) {
+                    newConfig.fonts = Object.entries(parsed.Fonts).map(([file, props]) => ({
+                        file,
+                        name: typeof props === 'object' ? (props as any).name : undefined,
+                        scope: typeof props === 'object' ? (props as any).scope : undefined,
+                        ifExists: typeof props === 'object' ? (props as any).ifExists : undefined,
+                        required: typeof props === 'object' ? (props as any).required : undefined,
+                        validate: typeof props === 'object' ? (props as any).validate : undefined
+                    }));
+                }
+                if (parsed.Services) {
+                    newConfig.services = Object.entries(parsed.Services).map(([name, props]) => ({
+                        name,
+                        path: typeof props === 'object' ? (props as any).path || '' : '',
+                        type: typeof props === 'object' ? (props as any).type : undefined,
+                        start: typeof props === 'object' ? (props as any).start : undefined,
+                        depend: typeof props === 'object' ? (props as any).depend : undefined,
+                        ifExists: typeof props === 'object' ? (props as any).ifExists : undefined,
+                        description: typeof props === 'object' ? (props as any).description || '' : '',
+                        account: typeof props === 'object' ? (props as any).account || '' : '',
+                        password: typeof props === 'object' ? (props as any).password || '' : '',
+                        timeout: typeof props === 'object' ? Number((props as any).timeout) || 0 : 0,
+                        critical: typeof props === 'object' ? !!(props as any).critical : false
+                    }));
+                }
+                if (parsed.LiveMode) {
+                    Object.assign(newConfig.liveMode, parsed.LiveMode);
+                }
+            }
 
             setConfig(newConfig);
             toast({
                 title: "Configuration Imported",
-                description: `Successfully imported ${isAppInfo ? "AppInfo.ini" : "Launcher.ini"} configuration`,
+                description: `Successfully imported ${activeConfigType === 'launcher' ? "Launcher.ini" : "AppInfo.ini"} configuration`,
             });
         };
         reader.readAsText(file);
     };
 
-    const launcherIcons = [];
-    const appinfoIcons = [];
-
     const tabs = [
-        { id: "appInfo", label: activeConfigType === 'launcher' ? 'Launcher.ini' : 'AppInfo.ini', icon: activeConfigType === 'launcher' ? Rocket : FileText  },
+        { id: "appInfo", label: activeConfigType === 'launcher' ? 'Launcher.ini' : 'AppInfo.ini', icon: activeConfigType === 'launcher' ? Rocket : FileText },
         { id: "launch", label: activeConfigType === 'launcher' ? 'Additional' : 'License', icon: activeConfigType === 'launcher' ? Plus : Stamp },
         { id: "activate", label: activeConfigType === 'launcher' ? 'Activate' : 'Dependencies', icon: activeConfigType === 'launcher' ? ShieldPlus : Stamp },
         { id: "registry", label: activeConfigType === 'launcher' ? 'Registry' : 'Team', icon: Database },
@@ -1264,6 +1609,21 @@ const PACConfigTool = () => {
         { id: "runtime", label: "V++/.NET", icon: Cpu },
         { id: "dlls", label: "DLLs", icon: Library },
         { id: 'icons', label: 'Icons', icon: ImageIcon }
+    ];
+
+    const launcherOnlyTabs = [
+        "registry",
+        "files",
+        "services",
+        "associations",
+        "firewall",
+        "drivers",
+        "tasks",
+        "symlinks",
+        "runtime",
+        "dlls",
+        "advanced",
+        "icons"
     ];
 
     const categories = [
@@ -1523,11 +1883,10 @@ const PACConfigTool = () => {
             <Button
                 variant="ghost"
                 onClick={onClick}
-                className={`w-full justify-start ${
-                    isActive
-                        ? "bg-blue-600 text-white hover:bg-blue-700"
-                        : "text-gray-700 hover:bg-gray-100"
-                }`}>
+                className={`w-full justify-start ${isActive
+                    ? "bg-blue-600 text-white hover:bg-blue-700"
+                    : "text-gray-700 hover:bg-gray-100"
+                    }`}>
                 <Icon className="w-4 h-4 mr-2" />
                 {tab.label}
             </Button>
@@ -1555,11 +1914,10 @@ const PACConfigTool = () => {
                                     onClick={() =>
                                         setActiveConfigType("launcher")
                                     }
-                                    className={`flex items-center px-3 py-2 rounded-md transition-colors ${
-                                        activeConfigType === "launcher"
-                                            ? "bg-white text-gray-900 shadow-sm"
-                                            : "text-gray-600 hover:text-gray-900"
-                                    }`}>
+                                    className={`flex items-center px-3 py-2 rounded-md transition-colors ${activeConfigType === "launcher"
+                                        ? "bg-white text-gray-900 shadow-sm"
+                                        : "text-gray-600 hover:text-gray-900"
+                                        }`}>
                                     <Settings className="w-4 h-4 mr-2" />
                                     Launcher.ini
                                 </button>
@@ -1567,11 +1925,10 @@ const PACConfigTool = () => {
                                     onClick={() =>
                                         setActiveConfigType("appinfo")
                                     }
-                                    className={`flex items-center px-3 py-2 rounded-md transition-colors ${
-                                        activeConfigType === "appinfo"
-                                            ? "bg-white text-gray-900 shadow-sm"
-                                            : "text-gray-600 hover:text-gray-900"
-                                    }`}>
+                                    className={`flex items-center px-3 py-2 rounded-md transition-colors ${activeConfigType === "appinfo"
+                                        ? "bg-white text-gray-900 shadow-sm"
+                                        : "text-gray-600 hover:text-gray-900"
+                                        }`}>
                                     <FileText className="w-4 h-4 mr-2" />
                                     AppInfo.ini
                                 </button>
@@ -1649,7 +2006,9 @@ const PACConfigTool = () => {
                         <Card>
                             <CardContent className="p-4">
                                 <div className="space-y-2">
-                                    {tabs.map((tab) => (
+                                    {tabs
+                                        .filter(tab => activeConfigType === 'launcher' || !launcherOnlyTabs.includes(tab.id))
+                                        .map((tab) => (
                                         <TabButton
                                             key={tab.id}
                                             tab={tab}
@@ -1708,6 +2067,7 @@ const PACConfigTool = () => {
                                         setConfig={setConfig}
                                         activeConfigType={activeConfigType}
                                         InputField={InputField}
+                                        CheckboxField={CheckboxField}
                                         addArrayItem={addArrayItem}
                                         removeArrayItem={removeArrayItem}
                                         updateArrayItem={updateArrayItem}
@@ -1775,6 +2135,7 @@ const PACConfigTool = () => {
                                         activeConfigType={activeConfigType}
                                         InputField={InputField}
                                         addArrayItem={addArrayItem}
+                                        CheckboxField={CheckboxField}
                                         removeArrayItem={removeArrayItem}
                                         updateArrayItem={updateArrayItem}
                                         Button={Button}
@@ -1790,11 +2151,29 @@ const PACConfigTool = () => {
                                         setConfig={setConfig}
                                         activeConfigType={activeConfigType}
                                         InputField={InputField}
+                                        CheckboxField={CheckboxField}
                                         addArrayItem={addArrayItem}
                                         removeArrayItem={removeArrayItem}
                                         updateArrayItem={updateArrayItem}
                                         Button={Button}
                                         CheckboxField={CheckboxField}
+                                        Card={Card}
+                                        CardContent={CardContent}
+                                    />
+                                )}
+
+                                {/* DLLs Tab */}
+                                {activeTab === "dlls" && (
+                                    <RegDllsTab
+                                        config={config}
+                                        setConfig={setConfig}
+                                        activeConfigType={activeConfigType}
+                                        InputField={InputField}
+                                        CheckboxField={CheckboxField}
+                                        addArrayItem={addArrayItem as any}
+                                        removeArrayItem={removeArrayItem as any}
+                                        updateArrayItem={updateArrayItem as any}
+                                        Button={Button}
                                         Card={Card}
                                         CardContent={CardContent}
                                     />
@@ -1807,6 +2186,7 @@ const PACConfigTool = () => {
                                         setConfig={setConfig}
                                         activeConfigType={activeConfigType}
                                         InputField={InputField}
+                                        CheckboxField={CheckboxField}
                                         addArrayItem={addArrayItem}
                                         removeArrayItem={removeArrayItem}
                                         updateArrayItem={updateArrayItem}
@@ -1818,7 +2198,7 @@ const PACConfigTool = () => {
                                 {/* Icons Tab */}
                                 {activeTab === "icons" && (
                                     <ImageProcessor
-                                        onIconsGenerated={ (icons) =>
+                                        onIconsGenerated={(icons) =>
                                             setConfig((prev) => ({ ...prev, icons }))
                                         }
                                     />

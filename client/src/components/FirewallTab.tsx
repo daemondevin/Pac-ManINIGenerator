@@ -25,12 +25,12 @@ interface FirewallRule {
 
 interface FirewallTabProps {
     config: { firewallRules: FirewallRule[] };
-    setConfig: (config: any) => void;
+    setConfig: React.Dispatch<any>;
     activeConfigType: string;
     InputField: React.ComponentType<any>;
-    addArrayItem: (key: string, value: any) => void;
-    removeArrayItem: (key: string, index: number) => void;
-    updateArrayItem: (key: string, index: number, field: string, value: any) => void;
+    addArrayItem: (key: 'firewallRules', value: any) => void;
+    removeArrayItem: (key: 'firewallRules', index: number) => void;
+    updateArrayItem: (key: 'firewallRules', index: number, field: string, value: any) => void;
     Button: React.ComponentType<any>;
     CheckboxField: React.ComponentType<any>;
     Card: React.ComponentType<any>;

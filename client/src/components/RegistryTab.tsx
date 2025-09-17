@@ -1,15 +1,17 @@
 import React from 'react';
 import * as Tooltip from "@radix-ui/react-tooltip"
-import { Plus, SquarePen, Minus, Database, Settings, CopyPlus, Asterisk } from 'lucide-react';
+import { Plus, BrushCleaning, SquarePen, DatabaseBackup, Minus, Trash, Database, Settings, CopyPlus, Asterisk } from 'lucide-react';
+
+type RegistrySections = 'registryKeys' | 'registryValues' | 'registryCleanupIfEmpty' | 'registryCleanupForce' | 'registryValueBackupDelete' | 'registryCopyKeys';
 
 type RegistryTabProps = {
     config: any;
     setConfig: (config: any) => void;
     activeConfigType: string;
     InputField: React.ComponentType<any>;
-    addArrayItem: (section: string, newItem: any) => void;
-    removeArrayItem: (section: string, index: number) => void;
-    updateArrayItem: (section: string, index: number, field: string, value: any) => void;
+    addArrayItem: (section: RegistrySections, newItem: any) => void;
+    removeArrayItem: (section: RegistrySections, index: number) => void;
+    updateArrayItem: (section: RegistrySections, index: number, field: string, value: any) => void;
     Button: React.ComponentType<any>;
     Card: React.ComponentType<any>;
     CardContent: React.ComponentType<any>;
@@ -121,7 +123,7 @@ const RegistryTab = ({
                         <Card key={index} className="mb-4">
                             <CardContent className="pt-4">
                                 <div className="flex items-center justify-between mb-4">
-                                    <h4 className="font-medium">Registry Value {index + 1}</h4>
+                                    <h4 className="font-medium">Registry Value Write {index + 1}</h4>
                                     <Button
                                         variant="ghost"
                                         size="sm"
@@ -168,13 +170,154 @@ const RegistryTab = ({
 
             <div className="mb-8">
                 <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-medium">Registry Cleanup If Empty</h3>
+                    <Button
+                        onClick={() => addArrayItem('registryCleanupIfEmpty', { key: '' })}
+                        size="sm"
+                    >
+                        <Plus className="w-4 h-4 mr-1" />
+                        Add Path to Key
+                    </Button>
+                </div>
+
+                {config.registryCleanupIfEmpty.length === 0 ? (
+                    <Card className="border-dashed border-2 border-gray-300">
+                        <CardContent className="text-center py-8">
+                            <BrushCleaning className="w-8 h-8 mx-auto mb-2 opacity-50 text-gray-400" />
+                            <p className="text-gray-500">No registry keys for the launcher to cleanup. Click "Add Path to Key" to get started.</p>
+                        </CardContent>
+                    </Card>
+                ) : (
+                    config.registryCleanupIfEmpty.map((key: { path: string }, index: number) => (
+                        <Card key={index} className="mb-4">
+                            <CardContent className="pt-4">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h4 className="font-medium">Key {index + 1}</h4>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => removeArrayItem('registryCleanupIfEmpty', index)}
+                                        className="text-red-600 hover:text-red-800"
+                                    >
+                                        <Minus className="w-4 h-4" />
+                                    </Button>
+                                </div>
+                                <InputField
+                                    label="Path to Key"
+                                    value={key.path || ''}
+                                    onChange={(value: string) => updateArrayItem('registryCleanupIfEmpty', index, 'path', value)}
+                                    placeholder="HKCU\Software\MyProgram"
+                                    description="Path to the registry key to cleanup"
+                                />
+                            </CardContent>
+                        </Card>
+                    ))
+                )}
+            </div>
+
+            <div className="mb-8">
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-medium">Registry Cleanup Force</h3>
+                    <Button
+                        onClick={() => addArrayItem('registryCleanupForce', { key: '' })}
+                        size="sm"
+                    >
+                        <Plus className="w-4 h-4 mr-1" />
+                        Add Key to Delete
+                    </Button>
+                </div>
+
+                {config.registryCleanupForce.length === 0 ? (
+                    <Card className="border-dashed border-2 border-gray-300">
+                        <CardContent className="text-center py-8">
+                            <Trash className="w-8 h-8 mx-auto mb-2 opacity-50 text-gray-400" />
+                            <p className="text-gray-500">No registry keys for the launcher to delete. Click "Add Key to Delete" to get started.</p>
+                        </CardContent>
+                    </Card>
+                ) : (
+                    config.registryCleanupForce.map((key: { path: string }, index: number) => (
+                        <Card key={index} className="mb-4">
+                            <CardContent className="pt-4">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h4 className="font-medium">Key {index + 1}</h4>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => removeArrayItem('registryCleanupForce', index)}
+                                        className="text-red-600 hover:text-red-800"
+                                    >
+                                        <Minus className="w-4 h-4" />
+                                    </Button>
+                                </div>
+                                <InputField
+                                    label="Path to Key"
+                                    value={key.path || ''}
+                                    onChange={(value: string) => updateArrayItem('registryCleanupForce', index, 'path', value)}
+                                    placeholder="HKCU\Software\MyProgram"
+                                    description="Path to the registry key to delete regardless of contents"
+                                />
+                            </CardContent>
+                        </Card>
+                    ))
+                )}
+            </div>
+
+            <div className="mb-8">
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-medium">Registry Value Backup Delete</h3>
+                    <Button
+                        onClick={() => addArrayItem('registryValueBackupDelete', { key: '' })}
+                        size="sm"
+                    >
+                        <Plus className="w-4 h-4 mr-1" />
+                        Add Key to Backup
+                    </Button>
+                </div>
+
+                {config.registryValueBackupDelete.length === 0 ? (
+                    <Card className="border-dashed border-2 border-gray-300">
+                        <CardContent className="text-center py-8">
+                            <DatabaseBackup className="w-8 h-8 mx-auto mb-2 opacity-50 text-gray-400" />
+                            <p className="text-gray-500">No registry keys for the launcher to backup. Click "Add Key to Backup" to get started.</p>
+                        </CardContent>
+                    </Card>
+                ) : (
+                    config.registryValueBackupDelete.map((key: { path: string }, index: number) => (
+                        <Card key={index} className="mb-4">
+                            <CardContent className="pt-4">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h4 className="font-medium">Key {index + 1}</h4>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => removeArrayItem('registryValueBackupDelete', index)}
+                                        className="text-red-600 hover:text-red-800"
+                                    >
+                                        <Minus className="w-4 h-4" />
+                                    </Button>
+                                </div>
+                                <InputField
+                                    label="Path to Key"
+                                    value={key.path || ''}
+                                    onChange={(value: string) => updateArrayItem('registryValueBackupDelete', index, 'path', value)}
+                                    placeholder="HKCU\Software\MyProgram"
+                                    description="Keys that are backed and restored but any new values added to the key will be deleted on restore"
+                                />
+                            </CardContent>
+                        </Card>
+                    ))
+                )}
+            </div>
+
+            <div className="mb-8">
+                <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-medium">Registry Copy Keys</h3>
                     <Button
                         onClick={() => addArrayItem('registryCopyKeys', { path: '' })}
                         size="sm"
                     >
                         <Plus className="w-4 h-4 mr-1" />
-                        Add Path to Key
+                        Add Key to Copy
                     </Button>
                 </div>
 
@@ -203,7 +346,7 @@ const RegistryTab = ({
                                 <InputField
                                     label="Path to Key"
                                     value={key.path || ''}
-                                    onChange={(value: string) => updateArrayItem('registryCopyKeys', index, 'key', value)}
+                                    onChange={(value: string) => updateArrayItem('registryCopyKeys', index, 'path', value)}
                                     placeholder="HKCU\Software\MyProgram\ExtraCareNeededKey"
                                     description="Path to the registry key to copy"
                                 />

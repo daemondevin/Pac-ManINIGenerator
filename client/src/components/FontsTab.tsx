@@ -15,12 +15,12 @@ interface Fonts {
 
 interface FontsTabProps {
     config: { fonts: Fonts[] };
-    setConfig: (config: any) => void;
+    setConfig: React.Dispatch<any>;
     activeConfigType: string;
     InputField: React.ComponentType<any>;
     addArrayItem: (section: 'fonts', value: any) => void;
     removeArrayItem: (section: 'fonts', index: number) => void;
-    updateArrayItem: (key: string, index: number, field: string, value: any) => void;
+    updateArrayItem: (key: 'fonts', index: number, field: string, value: any) => void;
     Button: React.ComponentType<any>;
     CheckboxField: React.ComponentType<any>;
     Card: React.ComponentType<any>;

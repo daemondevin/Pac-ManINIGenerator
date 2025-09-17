@@ -24,14 +24,13 @@ interface DriversTabProps {
         drivers: Driver[];
         [key: string]: any;
     };
-    setConfig: (config: any) => void;
+    setConfig: React.Dispatch<any>;
     activeConfigType: string;
     InputField: React.ComponentType<any>;
-    addArrayItem: (key: string, value: any) => void;
-    removeArrayItem: (key: string, index: number) => void;
-    updateArrayItem: (key: string, index: number, field: string, value: any) => void;
+    addArrayItem: (key: 'drivers', value: any) => void;
+    removeArrayItem: (key: 'drivers', index: number) => void;
+    updateArrayItem: (key: 'drivers', index: number, field: string, value: any) => void;
     Button: React.ComponentType<any>;
-    CheckboxField: React.ComponentType<any>;
     Card: React.ComponentType<any>;
     CardContent: React.ComponentType<any>;
 }
@@ -44,7 +43,6 @@ const DriversTab: React.FC<DriversTabProps> = ({
     removeArrayItem,
     updateArrayItem,
     Button,
-    CheckboxField,
     Card,
     CardContent
 }) => {
@@ -180,14 +178,14 @@ const DriversTab: React.FC<DriversTabProps> = ({
                                         <div className="flex items-center space-x-2">
                                             <Checkbox
                                                 checked={driver.signed === 'true'}
-                                                onCheckedChange={(checked) => updateArrayItem('drivers', index, 'signed', checked ? 'true' : 'false')}
+                                                onCheckedChange={(checked) => updateArrayItem('drivers', index, 'signed', checked === true ? 'true' : 'false')}
                                             />
                                             <Label className="text-sm">Require Signed</Label>
                                         </div>
                                         <div className="flex items-center space-x-2">
                                             <Checkbox
                                                 checked={driver.forceInstall === 'true'}
-                                                onCheckedChange={(checked) => updateArrayItem('drivers', index, 'forceInstall', checked ? 'true' : 'false')}
+                                                onCheckedChange={(checked) => updateArrayItem('drivers', index, 'forceInstall', checked === true ? 'true' : 'false')}
                                             />
                                             <Label className="text-sm">Force Install</Label>
                                         </div>
@@ -212,7 +210,7 @@ const DriversTab: React.FC<DriversTabProps> = ({
                                 <div className="mt-4 flex items-center space-x-2">
                                     <Checkbox
                                         checked={driver.required === 'true'}
-                                        onCheckedChange={(checked) => updateArrayItem('drivers', index, 'required', checked ? 'true' : 'false')}
+                                        onCheckedChange={(checked) => updateArrayItem('drivers', index, 'required', checked === true ? 'true' : 'false')}
                                     />
                                     <Label className="text-sm">Required Driver</Label>
                                 </div>

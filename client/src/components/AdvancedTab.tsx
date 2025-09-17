@@ -1,13 +1,28 @@
 import React from 'react';
 import { Plus, Minus, Settings } from 'lucide-react';
 
-const AdvancedTab = ({ 
-  config, 
-  setConfig, 
-  activeConfigType, 
-  InputField, 
-  addArrayItem, 
-  removeArrayItem, 
+interface AdvancedTabProps {
+  config: any;
+  setConfig: React.Dispatch<any>;
+  activeConfigType: string;
+  InputField: React.ComponentType<any>;
+  CheckboxField: React.ComponentType<any>;
+  addArrayItem: (section: 'languageStrings', newItem: any) => void;
+  removeArrayItem: (section: 'languageStrings', index: number) => void;
+  updateArrayItem: (section: 'languageStrings', index: number, field: string, value: any) => void;
+  Button,
+  Card,
+  CardContent
+}
+
+const AdvancedTab: React.FC<AdvancedTabProps> = ({
+  config,
+  setConfig,
+  activeConfigType,
+  InputField,
+  CheckboxField,
+  addArrayItem,
+  removeArrayItem,
   updateArrayItem,
   Button,
   Card,
@@ -35,28 +50,28 @@ const AdvancedTab = ({
               <InputField
                 label="Base Language Variable"
                 value={config.language.base || '%PortableApps.comLocaleglibc%'}
-                onChange={(value) => setConfig(prev => ({...prev, language: {...prev.language, base: value}}))}
+                onChange={(value: string) => setConfig(prev => ({...prev, language: {...prev.language, base: value}}))}
                 placeholder="%PortableApps.comLocaleglibc%"
                 description="Base string for language detection"
               />
               <InputField
                 label="Default Language"
                 value={config.language.default || 'en'}
-                onChange={(value) => setConfig(prev => ({...prev, language: {...prev.language, default: value}}))}
+                onChange={(value: string) => setConfig(prev => ({...prev, language: {...prev.language, default: value}}))}
                 placeholder="en"
                 description="Default language code if base not found"
               />
               <InputField
                 label="Check If Exists Path"
                 value={config.language.checkIfExists || ''}
-                onChange={(value) => setConfig(prev => ({...prev, language: {...prev.language, checkIfExists: value}}))}
+                onChange={(value: string) => setConfig(prev => ({...prev, language: {...prev.language, checkIfExists: value}}))}
                 placeholder="%PAL:AppDir%\Languages\%PAL:LanguageCustom%\*.*"
                 description="Path to check for language files"
               />
               <InputField
                 label="Default If Not Exists"
                 value={config.language.defaultIfNotExists || ''}
-                onChange={(value) => setConfig(prev => ({...prev, language: {...prev.language, defaultIfNotExists: value}}))}
+                onChange={(value: string) => setConfig(prev => ({...prev, language: {...prev.language, defaultIfNotExists: value}}))}
                 placeholder="en"
                 description="Fallback if language files don't exist"
               />
@@ -103,14 +118,14 @@ const AdvancedTab = ({
                   <InputField
                     label="From (System Language)"
                     value={lang.from || ''}
-                    onChange={(value) => updateArrayItem('languageStrings', index, 'from', value)}
+                    onChange={(value: string) => updateArrayItem('languageStrings', index, 'from', value)}
                     placeholder="en_US"
                     description="System language code to match"
                   />
                   <InputField
                     label="To (App Language)"
                     value={lang.to || ''}
-                    onChange={(value) => updateArrayItem('languageStrings', index, 'to', value)}
+                    onChange={(value: string) => updateArrayItem('languageStrings', index, 'to', value)}
                     placeholder="en"
                     description="Application language code to use"
                   />
@@ -126,18 +141,11 @@ const AdvancedTab = ({
         <Card>
           <CardContent className="pt-4">
             <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="copyApp"
-                  checked={config.liveMode.copyApp === 'true'}
-                  onChange={(e) => setConfig(prev => ({...prev, liveMode: {...prev.liveMode, copyApp: e.target.checked ? 'true' : 'false'}}))}
-                  className="h-4 w-4 rounded border border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <label htmlFor="copyApp" className="text-sm font-medium text-gray-700">
-                  Copy App to Local Drive
-                </label>
-              </div>
+              <CheckboxField
+                label="Copy App to Local Drive"
+                checked={config.liveMode.copyApp === 'true'}
+                onChange={(checked: boolean) => setConfig(prev => ({...prev, liveMode: {...prev.liveMode, copyApp: checked ? 'true' : 'false'}}))}
+              />
               <p className="text-sm text-gray-500 ml-6">
                 Copy application to writable location when running from read-only media (CD/DVD)
               </p>

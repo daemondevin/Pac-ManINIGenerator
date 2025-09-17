@@ -1,11 +1,19 @@
 import React from 'react';
 
-const LaunchTab = ({ 
-  config, 
-  setConfig, 
-  activeConfigType, 
-  InputField, 
-  CheckboxField 
+interface LaunchTabProps {
+  config: any;
+  setConfig: React.Dispatch<any>;
+  activeConfigType: string;
+  InputField: React.ComponentType<any>;
+  CheckboxField: React.ComponentType<any>;
+}
+
+const LaunchTab: React.FC<LaunchTabProps> = ({
+  config,
+  setConfig,
+  activeConfigType,
+  InputField,
+  CheckboxField
 }) => {
   return (
     <div>

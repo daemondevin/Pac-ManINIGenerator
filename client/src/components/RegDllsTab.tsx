@@ -16,8 +16,8 @@ interface RegDLLsTabProps {
     activeConfigType: string;
     InputField: React.ComponentType<any>;
     addArrayItem: (section: 'registerDLLs', value: any) => void;
-    removeArrayItem: (key: string, index: number) => void;
-    updateArrayItem: (key: string, index: number, field: string, value: any) => void;
+    removeArrayItem: (key: 'registerDLLs', index: number) => void;
+    updateArrayItem: (key: 'registerDLLs', index: number, field: string, value: any) => void;
     Button: React.ComponentType<any>;
     CheckboxField: React.ComponentType<any>;
     Card: React.ComponentType<any>;
@@ -130,53 +130,12 @@ const RegDllsTab: React.FC<RegDLLsTabProps> = ({
                         <h4 className="text-sm font-medium text-blue-800">Component Registration Configuration Help</h4>
                     </div>
                     <div className="text-sm text-blue-700 mt-2 space-y-1">
-                        <Tooltip.Provider delayDuration={200}>
-                            <Tooltip.Root>
-                                <Tooltip.Trigger asChild>
-                                    <button
-                                        className="text-sm text-blue-700 mt-2 space-y-1"
-                                        aria-label="Footnote"
-                                    >
-                                        <strong>Registry Keys<sup>[<Asterisk className="w-3 h-3 inline-block align-text-top" />]</sup>:{"\u00A0"}</strong>
-                                    </button>
-                                </Tooltip.Trigger>
-                                <Tooltip.Content
-                                    className="rounded-lg bg-gray-900 text-white px-3 py-2 text-sm shadow-lg max-w-xs"
-                                    side="top"
-                                >
-                                    Be sure to enable <code>RegDLLs</code> in the <em>Activate</em> tab.
-                                    <Tooltip.Arrow className="fill-gray-900" />
-                                </Tooltip.Content>
-                            </Tooltip.Root>
-                        </Tooltip.Provider>
-                        Entire registry keys that will be backed up and restored.
-
-
-                        <p><strong>Registry Values:</strong> Specific values to write during application startup.</p>
-
-                        <Tooltip.Provider delayDuration={200}>
-                            <Tooltip.Root>
-                                <Tooltip.Trigger asChild>
-                                    <button
-                                        className="text-sm text-blue-700 mt-2 space-y-1"
-                                        aria-label="Footnote"
-                                    >
-                                        <strong>Registry Copy Keys<sup>[<Asterisk className="w-3 h-3 inline-block align-text-top" />]</sup>:{"\u00A0"}</strong>
-                                    </button>
-                                </Tooltip.Trigger>
-                                <Tooltip.Content
-                                    className="rounded-lg bg-gray-900 text-white px-3 py-2 text-sm shadow-lg max-w-xs"
-                                    side="top"
-                                >
-                                    Be sure to enable <code>RegCopyKeys</code> in the <em>Features</em> section.
-                                    <Tooltip.Arrow className="fill-gray-900" />
-                                </Tooltip.Content>
-                            </Tooltip.Root>
-                        </Tooltip.Provider>
-                        Copy registry keys to a special hive before launch and restores keys on exit.
-
-                        <p><strong>Supported Paths:</strong> Use HKCU, HKLM, or HKCR.</p>
-                        <p><strong>PAL Variables:</strong> You can use %PAL:DataDir%, %PAL:AppDir% in registry values.</p>
+                        <p><strong>DLL Registration:</strong> Register and unregister COM components (DLLs, OCXs, EXEs) and type libraries.</p>
+                        <p><strong>ProgID:</strong> The Programmatic Identifier for the component, like 'MyComponent.Object'.</p>
+                        <p>
+                            <strong>Activation:</strong> Ensure the <code>DLL Registration</code> feature is enabled in the <em>Features</em> tab for these settings to take effect.
+                        </p>
+                        <p><strong>PAL Variables:</strong> Use variables like <code>%PAL:AppDir%</code> in file paths for portability.</p>
                     </div>
                 </CardContent>
             </Card>

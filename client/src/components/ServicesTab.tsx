@@ -1,8 +1,6 @@
 import React from 'react';
 import { Plus, Minus, Settings, AlertCircle } from 'lucide-react';
 import { Checkbox } from './ui/checkbox';
-import { Label } from './ui/label';
-import internal from 'stream';
 
 interface Services {
     name: string;
@@ -63,7 +61,7 @@ const ServicesTab: React.FC<ServicesTabProps> = ({
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-medium">Windows Services</h3>
                     <Button
-                        onClick={() => addArrayItem('services', { name: '', path: '', type: 'own', start: 'demand', depend: '', ifExists: 'skip' })}
+                        onClick={() => addArrayItem('services', { name: '', path: '', type: 'own', start: 'demand', depend: '', ifExists: 'skip', description: '', account: '', password: '', timeout: 30000, critical: false })}
                         size="sm"
                     >
                         <Plus className="w-4 h-4 mr-1" />

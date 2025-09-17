@@ -42,16 +42,16 @@ interface AssociationsTabProps {
         protocolHandlers: ProtocolHandlers[];
         contextMenus: ContextMenu[];
     };
-    setConfig: (config: any) => void;
+    setConfig: React.Dispatch<any>;
     activeConfigType: string;
-    InputField: React.ComponentType<any>;
-    addArrayItem: (section: 'filetypes' | 'protocolHandlers' | 'contextMenus', item: any) => void;
-    removeArrayItem: (section: 'filetypes' | 'protocolHandlers' | 'contextMenus', index: number) => void;
-    updateArrayItem: (section: 'filetypes' | 'protocolHandlers' | 'contextMenus', index: number, field: string, value: any) => void;
-    Button: React.ComponentType<any>;
+    InputField: React.ComponentType<any>;    
+    addArrayItem: (section: keyof AssociationsTabProps['config'], item: any) => void;
+    removeArrayItem: (section: keyof AssociationsTabProps['config'], index: number) => void;
+    updateArrayItem: (section: keyof AssociationsTabProps['config'], index: number, field: string, value: any) => void;
+    Button: React.ComponentType<{ children: React.ReactNode; [key: string]: any; }>;
     CheckboxField: React.ComponentType<any>;
-    Card: React.ComponentType<any>;
-    CardContent: React.ComponentType<any>;
+    Card: React.ComponentType<{ children: React.ReactNode; [key: string]: any; }>;
+    CardContent: React.ComponentType<{ children: React.ReactNode; [key: string]: any; }>;
 }
 
 const AssociationTab: React.FC<AssociationsTabProps> = ({
@@ -409,53 +409,13 @@ const AssociationTab: React.FC<AssociationsTabProps> = ({
                         <h4 className="text-sm font-medium text-blue-800">File Association Help</h4>
                     </div>
                     <div className="text-sm text-blue-700 mt-2 space-y-1">
-                        <Tooltip.Provider delayDuration={200}>
-                            <Tooltip.Root>
-                                <Tooltip.Trigger asChild>
-                                    <button
-                                        className="text-sm text-blue-700 mt-2 space-y-1"
-                                        aria-label="Footnote"
-                                    >
-                                        <strong>Registry Keys<sup>[<Asterisk className="w-3 h-3 inline-block align-text-top" />]</sup>:{"\u00A0"}</strong>
-                                    </button>
-                                </Tooltip.Trigger>
-                                <Tooltip.Content
-                                    className="rounded-lg bg-gray-900 text-white px-3 py-2 text-sm shadow-lg max-w-xs"
-                                    side="top"
-                                >
-                                    Be sure to enable <code>RegistryKeys</code> in the <em>Activate</em> tab.
-                                    <Tooltip.Arrow className="fill-gray-900" />
-                                </Tooltip.Content>
-                            </Tooltip.Root>
-                        </Tooltip.Provider>
-                        Entire registry keys that will be backed up and restored.
-
-
-                        <p><strong>Registry Values:</strong> Specific values to write during application startup.</p>
-
-                        <Tooltip.Provider delayDuration={200}>
-                            <Tooltip.Root>
-                                <Tooltip.Trigger asChild>
-                                    <button
-                                        className="text-sm text-blue-700 mt-2 space-y-1"
-                                        aria-label="Footnote"
-                                    >
-                                        <strong>Registry Copy Keys<sup>[<Asterisk className="w-3 h-3 inline-block align-text-top" />]</sup>:{"\u00A0"}</strong>
-                                    </button>
-                                </Tooltip.Trigger>
-                                <Tooltip.Content
-                                    className="rounded-lg bg-gray-900 text-white px-3 py-2 text-sm shadow-lg max-w-xs"
-                                    side="top"
-                                >
-                                    Be sure to enable <code>RegCopyKeys</code> in the <em>Activate</em> tab.
-                                    <Tooltip.Arrow className="fill-gray-900" />
-                                </Tooltip.Content>
-                            </Tooltip.Root>
-                        </Tooltip.Provider>
-                        Copy registry keys to a special hive before launch and restores keys on exit.
-
-                        <p><strong>Supported Paths:</strong> Use HKCU, HKLM, or HKCR.</p>
-                        <p><strong>PAL Variables:</strong> You can use %PAL:DataDir%, %PAL:AppDir% in registry values.</p>
+                        <p><strong>Filetype Associations:</strong> Link file extensions (e.g., .txt) to your portable application.</p>
+                        <p><strong>Protocol Handlers:</strong> Register your app to handle custom URL protocols (e.g., <code>myapp://</code>).</p>
+                        <p><strong>Context Menus:</strong> Add custom actions to the right-click menu for specific file types.</p>
+                        <p>
+                            <strong>Activation:</strong> Ensure the <code>Associations</code> feature is enabled in the <em>Features</em> tab for these settings to take effect.
+                        </p>
+                        <p><strong>PAL Variables:</strong> Use variables like <code>%PAL:AppDir%</code> in commands for portability.</p>
                     </div>
                 </CardContent>
             </Card>
