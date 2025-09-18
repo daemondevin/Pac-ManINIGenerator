@@ -45,9 +45,6 @@ interface AssociationsTabProps {
     setConfig: React.Dispatch<any>;
     activeConfigType: string;
     InputField: React.ComponentType<any>;    
-    addArrayItem: (section: keyof AssociationsTabProps['config'], item: any) => void;
-    removeArrayItem: (section: keyof AssociationsTabProps['config'], index: number) => void;
-    updateArrayItem: (section: keyof AssociationsTabProps['config'], index: number, field: string, value: any) => void;
     Button: React.ComponentType<{ children: React.ReactNode; [key: string]: any; }>;
     CheckboxField: React.ComponentType<any>;
     Card: React.ComponentType<{ children: React.ReactNode; [key: string]: any; }>;
@@ -59,9 +56,6 @@ const AssociationTab: React.FC<AssociationsTabProps> = ({
     setConfig,
     activeConfigType,
     InputField,
-    addArrayItem,
-    removeArrayItem,
-    updateArrayItem,
     Button,
     CheckboxField,
     Card,
@@ -85,7 +79,10 @@ const AssociationTab: React.FC<AssociationsTabProps> = ({
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-medium">Filetype Associations</h3>
                     <Button
-                        onClick={() => addArrayItem('filetypes', { extension: '', progId: '', description: '', defaultIcon: '', openCommand: '', editCommand: '', printCommand: '', ifExists: 'own', priority: 'normal', mimeType: '' })}
+                        onClick={() => setConfig((prev: any) => ({
+                            ...prev,
+                            filetypes: [...prev.filetypes, { extension: '', progId: '', description: '', defaultIcon: '', openCommand: '', editCommand: '', printCommand: '', ifExists: 'own', priority: 'normal', mimeType: '' }]
+                        }))}
                         size="sm"
                     >
                         <Plus className="w-4 h-4 mr-1" />
@@ -109,7 +106,10 @@ const AssociationTab: React.FC<AssociationsTabProps> = ({
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() => removeArrayItem('filetypes', index)}
+                                        onClick={() => setConfig((prev: any) => ({
+                                            ...prev,
+                                            filetypes: prev.filetypes.filter((_: any, i: number) => i !== index)
+                                        }))}
                                         className="text-red-600 hover:text-red-800"
                                     >
                                         <Minus className="w-4 h-4" />
@@ -119,21 +119,30 @@ const AssociationTab: React.FC<AssociationsTabProps> = ({
                                     <InputField
                                         label="Extension"
                                         value={filetype.extension || ''}
-                                        onChange={(value: string) => updateArrayItem('filetypes', index, 'extension', value)}
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            filetypes: prev.filetypes.map((item: FileType, i: number) => i === index ? { ...item, extension: value } : item)
+                                        }))}
                                         placeholder=".myext"
                                         description="File extension (include leading dot)"
                                     />
                                     <InputField
                                         label="ProgID"
                                         value={filetype.progId || ''}
-                                        onChange={(value: string) => updateArrayItem('filetypes', index, 'progId', value)}
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            filetypes: prev.filetypes.map((item: FileType, i: number) => i === index ? { ...item, progId: value } : item)
+                                        }))}
                                         placeholder="MyApp.Document"
                                         description="Program identifier for the filetype"
                                     />
                                     <InputField
                                         label="Default Icon"
                                         value={filetype.defaultIcon || ''}
-                                        onChange={(value: string) => updateArrayItem('filetypes', index, 'defaultIcon', value)}
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            filetypes: prev.filetypes.map((item: FileType, i: number) => i === index ? { ...item, defaultIcon: value } : item)
+                                        }))}
                                         placeholder="%PAL:AppDir%\App\myapp.exe,0"
                                         description="Path to the icon file,index"
                                     />
@@ -142,14 +151,20 @@ const AssociationTab: React.FC<AssociationsTabProps> = ({
                                     <InputField
                                         label="Description"
                                         value={filetype.description || ''}
-                                        onChange={(value: string) => updateArrayItem('filetypes', index, 'description', value)}
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            filetypes: prev.filetypes.map((item: FileType, i: number) => i === index ? { ...item, description: value } : item)
+                                        }))}
                                         placeholder="My Portable App Document"
                                         description="Short description of the filetype."
                                     />
                                     <InputField
                                         label="Open Command"
                                         value={filetype.openCommand || ''}
-                                        onChange={(value: string) => updateArrayItem('filetypes', index, 'openCommand', value)}
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            filetypes: prev.filetypes.map((item: FileType, i: number) => i === index ? { ...item, openCommand: value } : item)
+                                        }))}
                                         placeholder='"%PAL:AppDir%\App\myapp.exe" "%1"'
                                         description="Command to open files (%1 = filepath)"
                                     />
@@ -158,14 +173,20 @@ const AssociationTab: React.FC<AssociationsTabProps> = ({
                                     <InputField
                                         label="Edit Command"
                                         value={filetype.editCommand || ''}
-                                        onChange={(value: string) => updateArrayItem('filetypes', index, 'editCommand', value)}
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            filetypes: prev.filetypes.map((item: FileType, i: number) => i === index ? { ...item, editCommand: value } : item)
+                                        }))}
                                         placeholder='"%PAL:AppDir%\App\myapp.exe" --edit "%1"'
                                         description="Command to edit files (optional)"
                                     />
                                     <InputField
                                         label="Print Command"
                                         value={filetype.printCommand || ''}
-                                        onChange={(value: string) => updateArrayItem('filetypes', index, 'printCommand', value)}
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            filetypes: prev.filetypes.map((item: FileType, i: number) => i === index ? { ...item, printCommand: value } : item)
+                                        }))}
                                         placeholder='"%PAL:AppDir%\App\MyGraphicsApp.exe" --print "%1"'
                                         description="Command to print files (optional)"
                                     />
@@ -175,7 +196,10 @@ const AssociationTab: React.FC<AssociationsTabProps> = ({
                                         label="If Exists"
                                         type="select"
                                         value={filetype.ifExists || 'own'}
-                                        onChange={(value: string) => updateArrayItem('filetypes', index, 'ifExists', value)}
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            filetypes: prev.filetypes.map((item: FileType, i: number) => i === index ? { ...item, ifExists: value } : item)
+                                        }))}
                                         placeholder={[
                                             { value: 'skip', label: 'Skip' },
                                             { value: 'backup', label: 'Backup' },
@@ -187,7 +211,10 @@ const AssociationTab: React.FC<AssociationsTabProps> = ({
                                         label="Priority"
                                         type="select"
                                         value={filetype.priority || 'normal'}
-                                        onChange={(value: string) => updateArrayItem('filetypes', index, 'priority', value)}
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            filetypes: prev.filetypes.map((item: FileType, i: number) => i === index ? { ...item, priority: value } : item)
+                                        }))}
                                         placeholder={[
                                             { value: 'high', label: 'High' },
                                             { value: 'normal', label: 'Normal' },
@@ -198,7 +225,10 @@ const AssociationTab: React.FC<AssociationsTabProps> = ({
                                     <InputField
                                         label="MIME Type"
                                         value={filetype.mimeType || ''}
-                                        onChange={(value: string) => updateArrayItem('filetypes', index, 'mimeType', value)}
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            filetypes: prev.filetypes.map((item: FileType, i: number) => i === index ? { ...item, mimeType: value } : item)
+                                        }))}
                                         placeholder="application/x-myapp-document"
                                         description="MIME type for web integration (optional)"
                                     />
@@ -213,7 +243,10 @@ const AssociationTab: React.FC<AssociationsTabProps> = ({
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-medium">Protocol Handler</h3>
                     <Button
-                        onClick={() => addArrayItem('protocolHandlers', { protocol: '', progId: '', description: '', defaultIcon: '', openCommand: '', ifExists: '' })}
+                        onClick={() => setConfig((prev: any) => ({
+                            ...prev,
+                            protocolHandlers: [...prev.protocolHandlers, { protocol: '', progId: '', description: '', defaultIcon: '', openCommand: '', ifExists: '' }]
+                        }))}
                         size="sm"
                     >
                         <Plus className="w-4 h-4 mr-1" />
@@ -237,7 +270,10 @@ const AssociationTab: React.FC<AssociationsTabProps> = ({
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() => removeArrayItem('protocolHandlers', index)}
+                                        onClick={() => setConfig((prev: any) => ({
+                                            ...prev,
+                                            protocolHandlers: prev.protocolHandlers.filter((_: any, i: number) => i !== index)
+                                        }))}
                                         className="text-red-600 hover:text-red-800"
                                     >
                                         <Minus className="w-4 h-4" />
@@ -247,14 +283,20 @@ const AssociationTab: React.FC<AssociationsTabProps> = ({
                                     <InputField
                                         label="Protocol"
                                         value={protocol.protocol || ''}
-                                        onChange={(value: string) => updateArrayItem('protocolHandlers', index, 'protocol', value)}
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            protocolHandlers: prev.protocolHandlers.map((item: ProtocolHandlers, i: number) => i === index ? { ...item, protocol: value } : item)
+                                        }))}
                                         placeholder="myvideoplayer"
                                         description="Protocol name (e.g., myapp, mailto)"
                                     />
                                     <InputField
                                         label="ProgID"
                                         value={protocol.progId || ''}
-                                        onChange={(value: string) => updateArrayItem('protocolHandlers', index, 'progId', value)}
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            protocolHandlers: prev.protocolHandlers.map((item: ProtocolHandlers, i: number) => i === index ? { ...item, progId: value } : item)
+                                        }))}
                                         placeholder="MyVideoPlayer.Stream"
                                         description="Program identifier for the protocol handler"
                                     />
@@ -262,7 +304,10 @@ const AssociationTab: React.FC<AssociationsTabProps> = ({
                                         label="If Exists"
                                         type="select"
                                         value={protocol.ifExists || 'own'}
-                                        onChange={(value: string) => updateArrayItem('protocolHandlers', index, 'ifExists', value)}
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            protocolHandlers: prev.protocolHandlers.map((item: ProtocolHandlers, i: number) => i === index ? { ...item, ifExists: value } : item)
+                                        }))}
                                         placeholder={[
                                             { value: 'skip', label: 'Skip' },
                                             { value: 'backup', label: 'Backup' },
@@ -275,14 +320,20 @@ const AssociationTab: React.FC<AssociationsTabProps> = ({
                                     <InputField
                                         label="Open Command"
                                         value={protocol.openCommand || ''}
-                                        onChange={(value: string) => updateArrayItem('protocolHandlers', index, 'openCommand', value)}
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            protocolHandlers: prev.protocolHandlers.map((item: ProtocolHandlers, i: number) => i === index ? { ...item, openCommand: value } : item)
+                                        }))}
                                         placeholder='"%PAL:AppDir%\App\myapp.exe" "%1"'
                                         description="Command to handle protocol (%1 = full URL)"
                                     />
                                     <InputField
                                         label="Default Icon"
                                         value={protocol.defaultIcon || ''}
-                                        onChange={(value: string) => updateArrayItem('protocolHandlers', index, 'defaultIcon', value)}
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            protocolHandlers: prev.protocolHandlers.map((item: ProtocolHandlers, i: number) => i === index ? { ...item, defaultIcon: value } : item)
+                                        }))}
                                         placeholder="%PAL:AppDir%\App\myapp.exe,0"
                                         description="Path to the icon file,index"
                                     />
@@ -291,7 +342,10 @@ const AssociationTab: React.FC<AssociationsTabProps> = ({
                                     <InputField
                                         label="Description"
                                         value={protocol.description || ''}
-                                        onChange={(value: string) => updateArrayItem('protocolHandlers', index, 'description', value)}
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            protocolHandlers: prev.protocolHandlers.map((item: ProtocolHandlers, i: number) => i === index ? { ...item, description: value } : item)
+                                        }))}
                                         placeholder="MyVideo Streaming Protocol"
                                         description="Protocol description"
                                     />
@@ -306,7 +360,10 @@ const AssociationTab: React.FC<AssociationsTabProps> = ({
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-medium">Context Menus</h3>
                     <Button
-                        onClick={() => addArrayItem('contextMenus', { extension: '', menuText: '', menuCommand: '', menuIcon: '', position: '', ifExists: '', condition: '' })}
+                        onClick={() => setConfig((prev: any) => ({
+                            ...prev,
+                            contextMenus: [...prev.contextMenus, { extension: '', menuText: '', menuCommand: '', menuIcon: '', position: '', ifExists: '', condition: '' }]
+                        }))}
                         size="sm"
                     >
                         <Plus className="w-4 h-4 mr-1" />
@@ -330,7 +387,10 @@ const AssociationTab: React.FC<AssociationsTabProps> = ({
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() => removeArrayItem('contextMenus', index)}
+                                        onClick={() => setConfig((prev: any) => ({
+                                            ...prev,
+                                            contextMenus: prev.contextMenus.filter((_: any, i: number) => i !== index)
+                                        }))}
                                         className="text-red-600 hover:text-red-800"
                                     >
                                         <Minus className="w-4 h-4" />
@@ -340,21 +400,30 @@ const AssociationTab: React.FC<AssociationsTabProps> = ({
                                     <InputField
                                         label="Extension"
                                         value={menu.extension || ''}
-                                        onChange={(value: string) => updateArrayItem('contextMenus', index, 'extension', value)}
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            contextMenus: prev.contextMenus.map((item: ContextMenu, i: number) => i === index ? { ...item, extension: value } : item)
+                                        }))}
                                         placeholder=".jpg,.png,.gif,.bmp"
                                         description="File extension or * for all files"
                                     />
                                     <InputField
                                         label="Menu Text"
                                         value={menu.menuText || ''}
-                                        onChange={(value: string) => updateArrayItem('contextMenus', index, 'menuText', value)}
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            contextMenus: prev.contextMenus.map((item: ContextMenu, i: number) => i === index ? { ...item, menuText: value } : item)
+                                        }))}
                                         placeholder="Edit with MyGraphics"
                                         description="Text to show in context menu"
                                     />
                                     <InputField
                                         label="Menu Icon"
                                         value={menu.menuIcon || ''}
-                                        onChange={(value: string) => updateArrayItem('contextMenus', index, 'menuIcon', value)}
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            contextMenus: prev.contextMenus.map((item: ContextMenu, i: number) => i === index ? { ...item, menuIcon: value } : item)
+                                        }))}
                                         placeholder="%PAL:AppDir%\icons\edit.ico,0"
                                         description="Path to icon file,index (optional)"
                                     />
@@ -363,14 +432,20 @@ const AssociationTab: React.FC<AssociationsTabProps> = ({
                                     <InputField
                                         label="Menu Command"
                                         value={menu.menuCommand || ''}
-                                        onChange={(value: string) => updateArrayItem('contextMenus', index, 'menuCommand', value)}
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            contextMenus: prev.contextMenus.map((item: ContextMenu, i: number) => i === index ? { ...item, menuCommand: value } : item)
+                                        }))}
                                         placeholder='"%PAL:AppDir%\MyGraphicsApp.exe" --quick-edit "%1"'
                                         description="Command to execute (%1 = filepath)"
                                     />
                                     <InputField
                                         label="Position"
                                         value={menu.position || ''}
-                                        onChange={(value: string) => updateArrayItem('contextMenus', index, 'position', value)}
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            contextMenus: prev.contextMenus.map((item: ContextMenu, i: number) => i === index ? { ...item, position: value } : item)
+                                        }))}
                                         placeholder="top"
                                         description="Top, Middle, or Bottom."
                                     />
@@ -380,7 +455,10 @@ const AssociationTab: React.FC<AssociationsTabProps> = ({
                                         label="If Exists"
                                         type="select"
                                         value={menu.ifExists || 'own'}
-                                        onChange={(value: string) => updateArrayItem('contextMenus', index, 'ifExists', value)}
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            contextMenus: prev.contextMenus.map((item: ContextMenu, i: number) => i === index ? { ...item, ifExists: value } : item)
+                                        }))}
                                         placeholder={[
                                             { value: 'skip', label: 'Skip' },
                                             { value: 'backup', label: 'Backup' },
@@ -391,7 +469,10 @@ const AssociationTab: React.FC<AssociationsTabProps> = ({
                                     <InputField
                                         label="Condition"
                                         value={menu.condition || ''}
-                                        onChange={(value: string) => updateArrayItem('contextMenus', index, 'condition', value)}
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            contextMenus: prev.contextMenus.map((item: ContextMenu, i: number) => i === index ? { ...item, condition: value } : item)
+                                        }))}
                                         placeholder=''
                                         description="Registry condition to check (optional)"
                                     />

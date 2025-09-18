@@ -99,6 +99,42 @@
   --shadow-2xl: 0px 2px 0px 0px hsl(220 98% 61% / 0.00);
 }
 
+.black {
+  --background: hsl(0 0% 0%);
+  --foreground: hsl(200 7% 91%);
+  --card: hsl(240 5% 5%);
+  --card-foreground: hsl(0 0% 90%);
+  --popover: hsl(0 0% 0%);
+  --popover-foreground: hsl(200 7% 91%);
+  --primary: hsl(220 98% 61%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(240 4% 12%);
+  --secondary-foreground: hsl(0 0% 90%);
+  --muted: hsl(240 4% 8%);
+  --muted-foreground: hsl(210 4% 50%);
+  --accent: hsl(240 5% 10%);
+  --accent-foreground: hsl(220 98% 61%);
+  --destructive: hsl(356 91% 54%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --border: hsl(240 4% 15%);
+  --input: hsl(240 4% 10%);
+  --ring: hsl(220 98% 61%);
+  --chart-1: hsl(220 98% 61%);
+  --chart-2: hsl(160 100% 36%);
+  --chart-3: hsl(42 93% 56%);
+  --chart-4: hsl(147 79% 42%);
+  --chart-5: hsl(341 75% 51%);
+  --sidebar: hsl(240 5% 5%);
+  --sidebar-foreground: hsl(0 0% 90%);
+  --sidebar-primary: hsl(220 98% 61%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(240 5% 10%);
+  --sidebar-accent-foreground: hsl(220 98% 61%);
+  --sidebar-border: hsl(240 4% 15%);
+  --sidebar-ring: hsl(220 98% 61%);
+  --radius: 0.5rem;
+}
+
 @layer base {
   * {
     @apply border-border;

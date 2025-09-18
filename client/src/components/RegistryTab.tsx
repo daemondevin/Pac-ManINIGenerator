@@ -9,9 +9,6 @@ type RegistryTabProps = {
     setConfig: (config: any) => void;
     activeConfigType: string;
     InputField: React.ComponentType<any>;
-    addArrayItem: (section: RegistrySections, newItem: any) => void;
-    removeArrayItem: (section: RegistrySections, index: number) => void;
-    updateArrayItem: (section: RegistrySections, index: number, field: string, value: any) => void;
     Button: React.ComponentType<any>;
     Card: React.ComponentType<any>;
     CardContent: React.ComponentType<any>;
@@ -22,9 +19,6 @@ const RegistryTab = ({
     setConfig,
     activeConfigType,
     InputField,
-    addArrayItem,
-    removeArrayItem,
-    updateArrayItem,
     Button,
     Card,
     CardContent
@@ -47,7 +41,10 @@ const RegistryTab = ({
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-medium">Registry Keys</h3>
                     <Button
-                        onClick={() => addArrayItem('registryKeys', { name: '', path: '' })}
+                        onClick={() => setConfig((prev: any) => ({
+                            ...prev,
+                            registryKeys: [...prev.registryKeys, { name: '', path: '' }]
+                        }))}
                         size="sm"
                     >
                         <Plus className="w-4 h-4 mr-1" />
@@ -71,7 +68,10 @@ const RegistryTab = ({
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() => removeArrayItem('registryKeys', index)}
+                                        onClick={() => setConfig((prev: any) => ({
+                                            ...prev,
+                                            registryKeys: prev.registryKeys.filter((_: any, i: number) => i !== index)
+                                        }))}
                                         className="text-red-600 hover:text-red-800"
                                     >
                                         <Minus className="w-4 h-4" />
@@ -80,15 +80,21 @@ const RegistryTab = ({
                                 <div className="grid grid-cols-2 gap-4">
                                     <InputField
                                         label="Name"
-                                        value={key.name || ''}
-                                        onChange={(value: string) => updateArrayItem('registryKeys', index, 'name', value)}
+                                        value={key.name || ''}                                        
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            registryKeys: prev.registryKeys.map((item: any, i: number) => i === index ? { ...item, name: value } : item)
+                                        }))}
                                         placeholder="appname_portable"
                                         description="File name for the saved registry key"
                                     />
                                     <InputField
                                         label="Registry Path"
-                                        value={key.path || ''}
-                                        onChange={(value: string) => updateArrayItem('registryKeys', index, 'path', value)}
+                                        value={key.path || ''}                                        
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            registryKeys: prev.registryKeys.map((item: any, i: number) => i === index ? { ...item, path: value } : item)
+                                        }))}
                                         placeholder="HKCU\Software\Publisher\AppName"
                                         description="Full path to the registry key"
                                     />
@@ -103,7 +109,10 @@ const RegistryTab = ({
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-medium">Registry Values to Write</h3>
                     <Button
-                        onClick={() => addArrayItem('registryValues', { key: '', type: 'REG_SZ', value: '' })}
+                        onClick={() => setConfig((prev: any) => ({
+                            ...prev,
+                            registryValues: [...prev.registryValues, { key: '', type: 'REG_SZ', value: '' }]
+                        }))}
                         size="sm"
                     >
                         <Plus className="w-4 h-4 mr-1" />
@@ -127,7 +136,10 @@ const RegistryTab = ({
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() => removeArrayItem('registryValues', index)}
+                                        onClick={() => setConfig((prev: any) => ({
+                                            ...prev,
+                                            registryValues: prev.registryValues.filter((_: any, i: number) => i !== index)
+                                        }))}
                                         className="text-red-600 hover:text-red-800"
                                     >
                                         <Minus className="w-4 h-4" />
@@ -136,16 +148,22 @@ const RegistryTab = ({
                                 <div className="grid grid-cols-3 gap-4">
                                     <InputField
                                         label="Registry Key Path"
-                                        value={value.key || ''}
-                                        onChange={(value_: string) => updateArrayItem('registryValues', index, 'key', value_)}
+                                        value={value.key || ''}                                        
+                                        onChange={(value_: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            registryValues: prev.registryValues.map((item: any, i: number) => i === index ? { ...item, key: value_ } : item)
+                                        }))}
                                         placeholder="HKCU\Software\MyApp\Setting"
                                         description="Full path including value name"
                                     />
                                     <InputField
                                         label="Value Type"
                                         type="select"
-                                        value={value.type || 'REG_SZ'}
-                                        onChange={(value_: string) => updateArrayItem('registryValues', index, 'type', value_)}
+                                        value={value.type || 'REG_SZ'}                                        
+                                        onChange={(value_: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            registryValues: prev.registryValues.map((item: any, i: number) => i === index ? { ...item, type: value_ } : item)
+                                        }))}
                                         placeholder={[
                                             { value: 'REG_SZ', label: 'String (REG_SZ)' },
                                             { value: 'REG_DWORD', label: 'DWORD (REG_DWORD)' },
@@ -156,8 +174,11 @@ const RegistryTab = ({
                                     />
                                     <InputField
                                         label="Value Data"
-                                        value={value.value || ''}
-                                        onChange={(value_: string) => updateArrayItem('registryValues', index, 'value', value_)}
+                                        value={value.value || ''}                                        
+                                        onChange={(value_: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            registryValues: prev.registryValues.map((item: any, i: number) => i === index ? { ...item, value: value_ } : item)
+                                        }))}
                                         placeholder={value.type === 'REG_DWORD' ? '1033' : 'MyValue'}
                                         description={value.type === 'REG_DWORD' ? 'Use decimal format' : 'Value data'}
                                     />
@@ -172,7 +193,10 @@ const RegistryTab = ({
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-medium">Registry Cleanup If Empty</h3>
                     <Button
-                        onClick={() => addArrayItem('registryCleanupIfEmpty', { key: '' })}
+                        onClick={() => setConfig((prev: any) => ({
+                            ...prev,
+                            registryCleanupIfEmpty: [...prev.registryCleanupIfEmpty, { path: '' }]
+                        }))}
                         size="sm"
                     >
                         <Plus className="w-4 h-4 mr-1" />
@@ -196,7 +220,10 @@ const RegistryTab = ({
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() => removeArrayItem('registryCleanupIfEmpty', index)}
+                                        onClick={() => setConfig((prev: any) => ({
+                                            ...prev,
+                                            registryCleanupIfEmpty: prev.registryCleanupIfEmpty.filter((_: any, i: number) => i !== index)
+                                        }))}
                                         className="text-red-600 hover:text-red-800"
                                     >
                                         <Minus className="w-4 h-4" />
@@ -204,8 +231,11 @@ const RegistryTab = ({
                                 </div>
                                 <InputField
                                     label="Path to Key"
-                                    value={key.path || ''}
-                                    onChange={(value: string) => updateArrayItem('registryCleanupIfEmpty', index, 'path', value)}
+                                    value={key.path || ''}                                    
+                                    onChange={(value: string) => setConfig((prev: any) => ({
+                                        ...prev,
+                                        registryCleanupIfEmpty: prev.registryCleanupIfEmpty.map((item: any, i: number) => i === index ? { ...item, path: value } : item)
+                                    }))}
                                     placeholder="HKCU\Software\MyProgram"
                                     description="Path to the registry key to cleanup"
                                 />
@@ -219,7 +249,10 @@ const RegistryTab = ({
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-medium">Registry Cleanup Force</h3>
                     <Button
-                        onClick={() => addArrayItem('registryCleanupForce', { key: '' })}
+                        onClick={() => setConfig((prev: any) => ({
+                            ...prev,
+                            registryCleanupForce: [...prev.registryCleanupForce, { path: '' }]
+                        }))}
                         size="sm"
                     >
                         <Plus className="w-4 h-4 mr-1" />
@@ -243,7 +276,10 @@ const RegistryTab = ({
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() => removeArrayItem('registryCleanupForce', index)}
+                                        onClick={() => setConfig((prev: any) => ({
+                                            ...prev,
+                                            registryCleanupForce: prev.registryCleanupForce.filter((_: any, i: number) => i !== index)
+                                        }))}
                                         className="text-red-600 hover:text-red-800"
                                     >
                                         <Minus className="w-4 h-4" />
@@ -251,8 +287,11 @@ const RegistryTab = ({
                                 </div>
                                 <InputField
                                     label="Path to Key"
-                                    value={key.path || ''}
-                                    onChange={(value: string) => updateArrayItem('registryCleanupForce', index, 'path', value)}
+                                    value={key.path || ''}                                    
+                                    onChange={(value: string) => setConfig((prev: any) => ({
+                                        ...prev,
+                                        registryCleanupForce: prev.registryCleanupForce.map((item: any, i: number) => i === index ? { ...item, path: value } : item)
+                                    }))}
                                     placeholder="HKCU\Software\MyProgram"
                                     description="Path to the registry key to delete regardless of contents"
                                 />
@@ -266,7 +305,10 @@ const RegistryTab = ({
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-medium">Registry Value Backup Delete</h3>
                     <Button
-                        onClick={() => addArrayItem('registryValueBackupDelete', { key: '' })}
+                        onClick={() => setConfig((prev: any) => ({
+                            ...prev,
+                            registryValueBackupDelete: [...prev.registryValueBackupDelete, { path: '' }]
+                        }))}
                         size="sm"
                     >
                         <Plus className="w-4 h-4 mr-1" />
@@ -290,7 +332,10 @@ const RegistryTab = ({
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() => removeArrayItem('registryValueBackupDelete', index)}
+                                        onClick={() => setConfig((prev: any) => ({
+                                            ...prev,
+                                            registryValueBackupDelete: prev.registryValueBackupDelete.filter((_: any, i: number) => i !== index)
+                                        }))}
                                         className="text-red-600 hover:text-red-800"
                                     >
                                         <Minus className="w-4 h-4" />
@@ -298,8 +343,11 @@ const RegistryTab = ({
                                 </div>
                                 <InputField
                                     label="Path to Key"
-                                    value={key.path || ''}
-                                    onChange={(value: string) => updateArrayItem('registryValueBackupDelete', index, 'path', value)}
+                                    value={key.path || ''}                                    
+                                    onChange={(value: string) => setConfig((prev: any) => ({
+                                        ...prev,
+                                        registryValueBackupDelete: prev.registryValueBackupDelete.map((item: any, i: number) => i === index ? { ...item, path: value } : item)
+                                    }))}
                                     placeholder="HKCU\Software\MyProgram"
                                     description="Keys that are backed and restored but any new values added to the key will be deleted on restore"
                                 />
@@ -313,7 +361,10 @@ const RegistryTab = ({
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-medium">Registry Copy Keys</h3>
                     <Button
-                        onClick={() => addArrayItem('registryCopyKeys', { path: '' })}
+                        onClick={() => setConfig((prev: any) => ({
+                            ...prev,
+                            registryCopyKeys: [...prev.registryCopyKeys, { path: '' }]
+                        }))}
                         size="sm"
                     >
                         <Plus className="w-4 h-4 mr-1" />
@@ -337,7 +388,10 @@ const RegistryTab = ({
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() => removeArrayItem('registryCopyKeys', index)}
+                                        onClick={() => setConfig((prev: any) => ({
+                                            ...prev,
+                                            registryCopyKeys: prev.registryCopyKeys.filter((_: any, i: number) => i !== index)
+                                        }))}
                                         className="text-red-600 hover:text-red-800"
                                     >
                                         <Minus className="w-4 h-4" />
@@ -345,8 +399,11 @@ const RegistryTab = ({
                                 </div>
                                 <InputField
                                     label="Path to Key"
-                                    value={key.path || ''}
-                                    onChange={(value: string) => updateArrayItem('registryCopyKeys', index, 'path', value)}
+                                    value={key.path || ''}                                    
+                                    onChange={(value: string) => setConfig((prev: any) => ({
+                                        ...prev,
+                                        registryCopyKeys: prev.registryCopyKeys.map((item: any, i: number) => i === index ? { ...item, path: value } : item)
+                                    }))}
                                     placeholder="HKCU\Software\MyProgram\ExtraCareNeededKey"
                                     description="Path to the registry key to copy"
                                 />

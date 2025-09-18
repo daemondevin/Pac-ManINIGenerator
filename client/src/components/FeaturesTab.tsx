@@ -204,10 +204,71 @@ const FeaturesTab: React.FC<FeaturesTabProps> = ({
               description="Launcher needs to run with elevated privileges"
             />
             <CheckboxField
-              label="Dependency Setting"
-              checked={config.dependencies.dependencySetting === 'true'}
-              onChange={(checked: boolean) => setConfig((prev: any) => ({...prev, dependencies: {...prev.dependencies, dependencySetting: checked ? 'true' : 'false'}}))}
-              description="Dependency setting description"
+              label="Uses Java"
+              checked={config.dependencies.usesJava === 'true'}
+              onChange={(checked: boolean) => setConfig((prev: any) => ({...prev, dependencies: {...prev.dependencies, usesJava: checked ? 'true' : 'false'}}))}
+              description="Application requires a Java runtime"
+            />
+            <CheckboxField
+              label="Uses Ghostscript"
+              checked={config.dependencies.usesGhostscript === 'true'}
+              onChange={(checked: boolean) => setConfig((prev: any) => ({...prev, dependencies: {...prev.dependencies, usesGhostscript: checked ? 'true' : 'false'}}))}
+              description="Application requires Ghostscript"
+            />
+            <InputField
+              label=".NET Version"
+              value={config.dependencies.usesDotNetVersion}
+              onChange={(value) => setConfig((prev: any) => ({...prev, dependencies: {...prev.dependencies, usesDotNetVersion: value}}))}
+              placeholder="4.8"
+              description="Required .NET Framework version"
+            />
+            <CheckboxField
+              label="Use Standard Utilities"
+              checked={config.dependencies.useStdUtils === 'true'}
+              onChange={(checked: boolean) => setConfig((prev: any) => ({...prev, dependencies: {...prev.dependencies, useStdUtils: checked ? 'true' : 'false'}}))}
+              description="Include standard utilities plugin"
+            />
+            <CheckboxField
+              label="File Locking"
+              checked={config.dependencies.fileLocking === 'true'}
+              onChange={(checked: boolean) => setConfig((prev: any) => ({...prev, dependencies: {...prev.dependencies, fileLocking: checked ? 'true' : 'false'}}))}
+              description="Include file locking plugin"
+            />
+            <CheckboxField
+              label="ACL Registry Support"
+              checked={config.dependencies.aclRegSupport === 'true'}
+              onChange={(checked: boolean) => setConfig((prev: any) => ({...prev, dependencies: {...prev.dependencies, aclRegSupport: checked ? 'true' : 'false'}}))}
+              description="Include ACL plugin for registry"
+            />
+            <CheckboxField
+              label="ACL Directory Support"
+              checked={config.dependencies.aclDirSupport === 'true'}
+              onChange={(checked: boolean) => setConfig((prev: any) => ({...prev, dependencies: {...prev.dependencies, aclDirSupport: checked ? 'true' : 'false'}}))}
+              description="Include ACL plugin for directories"
+            />
+            <CheckboxField
+              label="Remove Empty Directories"
+              checked={config.dependencies.rmEmptyDir === 'true'}
+              onChange={(checked: boolean) => setConfig((prev: any) => ({...prev, dependencies: {...prev.dependencies, rmEmptyDir: checked ? 'true' : 'false'}}))}
+              description="Include RmEmptyDir plugin"
+            />
+            <CheckboxField
+              label="LocalLow Support"
+              checked={config.dependencies.localLow === 'true'}
+              onChange={(checked: boolean) => setConfig((prev: any) => ({...prev, dependencies: {...prev.dependencies, localLow: checked ? 'true' : 'false'}}))}
+              description="Include support for AppData\LocalLow"
+            />
+            <CheckboxField
+              label="Public Documents Support"
+              checked={config.dependencies.publicDoc === 'true'}
+              onChange={(checked: boolean) => setConfig((prev: any) => ({...prev, dependencies: {...prev.dependencies, publicDoc: checked ? 'true' : 'false'}}))}
+              description="Include support for Public Documents"
+            />
+            <CheckboxField
+              label="Compare Versions"
+              checked={config.dependencies.compareVersions === 'true'}
+              onChange={(checked: boolean) => setConfig((prev: any) => ({...prev, dependencies: {...prev.dependencies, compareVersions: checked ? 'true' : 'false'}}))}
+              description="Include version comparison functions"
             />
           </div>
           <div>
@@ -217,6 +278,42 @@ const FeaturesTab: React.FC<FeaturesTabProps> = ({
               checked={config.dependencies.jsonSupport === 'true'}
               onChange={(checked: boolean) => setConfig((prev: any) => ({...prev, dependencies: {...prev.dependencies, jsonSupport: checked ? 'true' : 'false'}}))}
               description="Include nsJSON plugin for JSON operations"
+            />
+            <CheckboxField
+              label="Config Functions"
+              checked={config.dependencies.configFunctions === 'true'}
+              onChange={(checked: boolean) => setConfig((prev: any) => ({...prev, dependencies: {...prev.dependencies, configFunctions: checked ? 'true' : 'false'}}))}
+              description="Include config file functions"
+            />
+            <CheckboxField
+              label="Close Window"
+              checked={config.dependencies.closeWindow === 'true'}
+              onChange={(checked: boolean) => setConfig((prev: any) => ({...prev, dependencies: {...prev.dependencies, closeWindow: checked ? 'true' : 'false'}}))}
+              description="Include CloseWindow plugin"
+            />
+            <CheckboxField
+              label="Windows Messages"
+              checked={config.dependencies.winMessages === 'true'}
+              onChange={(checked: boolean) => setConfig((prev: any) => ({...prev, dependencies: {...prev.dependencies, winMessages: checked ? 'true' : 'false'}}))}
+              description="Include Windows Messages plugin"
+            />
+            <CheckboxField
+              label="Line Write"
+              checked={config.dependencies.lineWrite === 'true'}
+              onChange={(checked: boolean) => setConfig((prev: any) => ({...prev, dependencies: {...prev.dependencies, lineWrite: checked ? 'true' : 'false'}}))}
+              description="Include LineWrite plugin"
+            />
+            <CheckboxField
+              label="Trim String"
+              checked={config.dependencies.trimString === 'true'}
+              onChange={(checked: boolean) => setConfig((prev: any) => ({...prev, dependencies: {...prev.dependencies, trimString: checked ? 'true' : 'false'}}))}
+              description="Include TrimString plugin"
+            />
+            <CheckboxField
+              label="Close Process"
+              checked={config.dependencies.closeProcess === 'true'}
+              onChange={(checked: boolean) => setConfig((prev: any) => ({...prev, dependencies: {...prev.dependencies, closeProcess: checked ? 'true' : 'false'}}))}
+              description="Include CloseProcess plugin"
             />
             <InputField
               label="Restart Sleep (ms)"

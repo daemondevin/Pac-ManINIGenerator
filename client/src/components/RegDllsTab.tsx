@@ -15,9 +15,6 @@ interface RegDLLsTabProps {
     setConfig: (config: any) => void;
     activeConfigType: string;
     InputField: React.ComponentType<any>;
-    addArrayItem: (section: 'registerDLLs', value: any) => void;
-    removeArrayItem: (key: 'registerDLLs', index: number) => void;
-    updateArrayItem: (key: 'registerDLLs', index: number, field: string, value: any) => void;
     Button: React.ComponentType<any>;
     CheckboxField: React.ComponentType<any>;
     Card: React.ComponentType<any>;
@@ -29,9 +26,6 @@ const RegDllsTab: React.FC<RegDLLsTabProps> = ({
     setConfig,
     activeConfigType,
     InputField,
-    addArrayItem,
-    removeArrayItem,
-    updateArrayItem,
     Button,
     CheckboxField,
     Card,
@@ -55,7 +49,10 @@ const RegDllsTab: React.FC<RegDLLsTabProps> = ({
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-medium">DLL Registration</h3>
                     <Button
-                        onClick={() => addArrayItem('registerDLLs', { progId: '', file: '', type: 'REGDLL' })}
+                        onClick={() => setConfig((prev: any) => ({
+                            ...prev,
+                            registerDLLs: [...prev.registerDLLs, { progId: '', file: '', type: 'REGDLL' }]
+                        }))}
                         size="sm"
                     >
                         <Plus className="w-4 h-4 mr-1" />
@@ -79,7 +76,10 @@ const RegDllsTab: React.FC<RegDLLsTabProps> = ({
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() => removeArrayItem('registerDLLs', index)}
+                                        onClick={() => setConfig((prev: any) => ({
+                                            ...prev,
+                                            registerDLLs: prev.registerDLLs.filter((_: any, i: number) => i !== index)
+                                        }))}
                                         className="text-red-600 hover:text-red-800"
                                     >
                                         <Minus className="w-4 h-4" />
@@ -88,15 +88,21 @@ const RegDllsTab: React.FC<RegDLLsTabProps> = ({
                                 <div className="grid grid-cols-2 gap-4 mb-4">
                                     <InputField
                                         label="ProgID"
-                                        value={dll.progId || ''}
-                                        onChange={(value: string) => updateArrayItem('registerDLLs', index, 'progId', value)}
+                                        value={dll.progId || ''}                                        
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            registerDLLs: prev.registerDLLs.map((item: RegDLL, i: number) => i === index ? { ...item, progId: value } : item)
+                                        }))}
                                         placeholder="MyApp.Component"
                                         description="Program ID for the DLL component"
                                     />
                                     <InputField
                                         label="DLL File Path"
-                                        value={dll.file || ''}
-                                        onChange={(value: string) => updateArrayItem('registerDLLs', index, 'file', value)}
+                                        value={dll.file || ''}                                        
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            registerDLLs: prev.registerDLLs.map((item: RegDLL, i: number) => i === index ? { ...item, file: value } : item)
+                                        }))}
                                         placeholder="%PAL:AppDir%\components\mylib.dll"
                                         description="Path to DLL file"
                                     />
@@ -105,8 +111,11 @@ const RegDllsTab: React.FC<RegDLLsTabProps> = ({
                                     <InputField
                                         label="Registration Type"
                                         type="select"
-                                        value={dll.type || 'REGDLL'}
-                                        onChange={(value: string) => updateArrayItem('registerDLLs', index, 'type', value)}
+                                        value={dll.type || 'REGDLL'}                                        
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            registerDLLs: prev.registerDLLs.map((item: RegDLL, i: number) => i === index ? { ...item, type: value } : item)
+                                        }))}
                                         placeholder={[
                                             { value: 'REGDLL', label: 'Register DLL' },
                                             { value: 'REGTLB', label: 'Register Type Library' },

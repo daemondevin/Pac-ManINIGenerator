@@ -22,15 +22,12 @@ interface Driver {
 interface DriversTabProps {
     config: {
         drivers: Driver[];
-        [key: string]: any;
     };
     setConfig: React.Dispatch<any>;
     activeConfigType: string;
     InputField: React.ComponentType<any>;
-    addArrayItem: (key: 'drivers', value: any) => void;
-    removeArrayItem: (key: 'drivers', index: number) => void;
-    updateArrayItem: (key: 'drivers', index: number, field: string, value: any) => void;
     Button: React.ComponentType<any>;
+    CheckboxField: React.ComponentType<any>;
     Card: React.ComponentType<any>;
     CardContent: React.ComponentType<any>;
 }
@@ -39,10 +36,8 @@ const DriversTab: React.FC<DriversTabProps> = ({
     setConfig,
     activeConfigType,
     InputField,
-    addArrayItem,
-    removeArrayItem,
-    updateArrayItem,
     Button,
+    CheckboxField,
     Card,
     CardContent
 }) => {
@@ -65,7 +60,9 @@ const DriversTab: React.FC<DriversTabProps> = ({
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-medium">Device Drivers</h3>
                     <Button
-                        onClick={() => addArrayItem('drivers', {
+                        onClick={() => setConfig((prev: any) => ({
+                            ...prev,
+                            drivers: [...prev.drivers, {
                             infFile: '',
                             hardwareId: '',
                             driverName: '',
@@ -78,7 +75,8 @@ const DriversTab: React.FC<DriversTabProps> = ({
                             category: '',
                             version: '',
                             publisher: ''
-                        })}
+                        }]
+                        }))}
                         size="sm"
                     >
                         <Plus className="w-4 h-4 mr-1" />
@@ -102,7 +100,10 @@ const DriversTab: React.FC<DriversTabProps> = ({
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() => removeArrayItem('drivers', index)}
+                                        onClick={() => setConfig((prev: any) => ({
+                                            ...prev,
+                                            drivers: prev.drivers.filter((_: any, i: number) => i !== index)
+                                        }))}
                                         className="text-red-600 hover:text-red-800"
                                     >
                                         <Minus className="w-4 h-4" />
@@ -111,16 +112,22 @@ const DriversTab: React.FC<DriversTabProps> = ({
                                 <div className="grid grid-cols-2 gap-4 mb-4">
                                     <InputField
                                         label="INF File"
-                                        value={driver.infFile || ''}
-                                        onChange={(value: string) => updateArrayItem('drivers', index, 'infFile', value)}
+                                        value={driver.infFile || ''}                                        
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            drivers: prev.drivers.map((item: Driver, i: number) => i === index ? { ...item, infFile: value } : item)
+                                        }))}
                                         placeholder="%PAL:AppDir%\drivers\mydevice.inf"
                                         description="Path to driver INF file"
                                         required
                                     />
                                     <InputField
                                         label="Hardware ID"
-                                        value={driver.hardwareId || ''}
-                                        onChange={(value: string) => updateArrayItem('drivers', index, 'hardwareId', value)}
+                                        value={driver.hardwareId || ''}                                        
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            drivers: prev.drivers.map((item: Driver, i: number) => i === index ? { ...item, hardwareId: value } : item)
+                                        }))}
                                         placeholder="USB\VID_1234&PID_5678"
                                         description="Hardware identifier to match"
                                     />
@@ -128,15 +135,21 @@ const DriversTab: React.FC<DriversTabProps> = ({
                                 <div className="grid grid-cols-2 gap-4 mb-4">
                                     <InputField
                                         label="Driver Name"
-                                        value={driver.driverName || ''}
-                                        onChange={(value: string) => updateArrayItem('drivers', index, 'driverName', value)}
+                                        value={driver.driverName || ''}                                        
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            drivers: prev.drivers.map((item: Driver, i: number) => i === index ? { ...item, driverName: value } : item)
+                                        }))}
                                         placeholder="My Custom USB Device"
                                         description="Display name for driver"
                                     />
                                     <InputField
                                         label="Category"
-                                        value={driver.category || ''}
-                                        onChange={(value: string) => updateArrayItem('drivers', index, 'category', value)}
+                                        value={driver.category || ''}                                        
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            drivers: prev.drivers.map((item: Driver, i: number) => i === index ? { ...item, category: value } : item)
+                                        }))}
                                         placeholder="USB"
                                         description="Driver category"
                                     />
@@ -145,8 +158,11 @@ const DriversTab: React.FC<DriversTabProps> = ({
                                     <InputField
                                         label="Architecture"
                                         type="select"
-                                        value={driver.architecture || 'auto'}
-                                        onChange={(value: string) => updateArrayItem('drivers', index, 'architecture', value)}
+                                        value={driver.architecture || 'auto'}                                        
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            drivers: prev.drivers.map((item: Driver, i: number) => i === index ? { ...item, architecture: value } : item)
+                                        }))}
                                         placeholder={[
                                             { value: 'auto', label: 'Auto-detect' },
                                             { value: 'x86', label: '32-bit (x86)' },
@@ -157,8 +173,11 @@ const DriversTab: React.FC<DriversTabProps> = ({
                                     <InputField
                                         label="If Exists"
                                         type="select"
-                                        value={driver.ifExists || 'update'}
-                                        onChange={(value: string) => updateArrayItem('drivers', index, 'ifExists', value)}
+                                        value={driver.ifExists || 'update'}                                        
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            drivers: prev.drivers.map((item: Driver, i: number) => i === index ? { ...item, ifExists: value } : item)
+                                        }))}
                                         placeholder={[
                                             { value: 'skip', label: 'Skip' },
                                             { value: 'backup', label: 'Backup' },
@@ -169,23 +188,32 @@ const DriversTab: React.FC<DriversTabProps> = ({
                                     />
                                     <InputField
                                         label="Timeout"
-                                        value={driver.timeout || '60'}
-                                        onChange={(value: string) => updateArrayItem('drivers', index, 'timeout', value)}
+                                        value={driver.timeout || '60'}                                        
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            drivers: prev.drivers.map((item: Driver, i: number) => i === index ? { ...item, timeout: value } : item)
+                                        }))}
                                         placeholder="60"
                                         description="Installation timeout (seconds)"
                                     />
                                     <div className="space-y-2">
                                         <div className="flex items-center space-x-2">
                                             <Checkbox
-                                                checked={driver.signed === 'true'}
-                                                onCheckedChange={(checked) => updateArrayItem('drivers', index, 'signed', checked === true ? 'true' : 'false')}
+                                                checked={driver.signed === 'true'}                                                
+                                                onCheckedChange={(checked) => setConfig((prev: any) => ({
+                                                    ...prev,
+                                                    drivers: prev.drivers.map((item: Driver, i: number) => i === index ? { ...item, signed: checked === true ? 'true' : 'false' } : item)
+                                                }))}
                                             />
                                             <Label className="text-sm">Require Signed</Label>
                                         </div>
                                         <div className="flex items-center space-x-2">
                                             <Checkbox
-                                                checked={driver.forceInstall === 'true'}
-                                                onCheckedChange={(checked) => updateArrayItem('drivers', index, 'forceInstall', checked === true ? 'true' : 'false')}
+                                                checked={driver.forceInstall === 'true'}                                                
+                                                onCheckedChange={(checked) => setConfig((prev: any) => ({
+                                                    ...prev,
+                                                    drivers: prev.drivers.map((item: Driver, i: number) => i === index ? { ...item, forceInstall: checked === true ? 'true' : 'false' } : item)
+                                                }))}
                                             />
                                             <Label className="text-sm">Force Install</Label>
                                         </div>
@@ -194,23 +222,32 @@ const DriversTab: React.FC<DriversTabProps> = ({
                                 <div className="grid grid-cols-2 gap-4">
                                     <InputField
                                         label="Version"
-                                        value={driver.version || ''}
-                                        onChange={(value: string) => updateArrayItem('drivers', index, 'version', value)}
+                                        value={driver.version || ''}                                        
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            drivers: prev.drivers.map((item: Driver, i: number) => i === index ? { ...item, version: value } : item)
+                                        }))}
                                         placeholder="1.2.3.4"
                                         description="Expected driver version"
                                     />
                                     <InputField
                                         label="Publisher"
-                                        value={driver.publisher || ''}
-                                        onChange={(value: string) => updateArrayItem('drivers', index, 'publisher', value)}
+                                        value={driver.publisher || ''}                                        
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            drivers: prev.drivers.map((item: Driver, i: number) => i === index ? { ...item, publisher: value } : item)
+                                        }))}
                                         placeholder="My Company"
                                         description="Expected driver publisher"
                                     />
                                 </div>
                                 <div className="mt-4 flex items-center space-x-2">
                                     <Checkbox
-                                        checked={driver.required === 'true'}
-                                        onCheckedChange={(checked) => updateArrayItem('drivers', index, 'required', checked === true ? 'true' : 'false')}
+                                        checked={driver.required === 'true'}                                        
+                                        onCheckedChange={(checked) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            drivers: prev.drivers.map((item: Driver, i: number) => i === index ? { ...item, required: checked === true ? 'true' : 'false' } : item)
+                                        }))}
                                     />
                                     <Label className="text-sm">Required Driver</Label>
                                 </div>
@@ -220,20 +257,17 @@ const DriversTab: React.FC<DriversTabProps> = ({
                 )}
             </div>
 
-            <Card className="bg-yellow-50 border-yellow-200">
+            <Card className="bg-blue-50 border-blue-200 mt-8">
                 <CardContent className="pt-4">
                     <div className="flex items-center">
-                        <Microchip className="w-5 h-5 text-yellow-500 mr-2" />
-                        <h4 className="text-sm font-medium text-yellow-800">Services & DLL Registration Warning</h4>
+                        <Microchip className="w-5 h-5 text-blue-500 mr-2" />
+                        <h4 className="text-sm font-medium text-blue-800">Device Drivers Help</h4>
                     </div>
-                    <p className="text-sm text-yellow-700 mt-1">
-                        Services and DLL registration require careful configuration and may require administrator privileges.
-                        Ensure you understand the security implications before enabling these features.
-                    </p>
-                    <div className="mt-3 text-sm text-yellow-700">
-                        <p><strong>Services:</strong> Will be installed/started when the app launches and properly cleaned up when it exits.</p>
-                        <p><strong>DLL Registration:</strong> COM components will be registered during startup and unregistered during cleanup.</p>
-                        <p><strong>Task Cleanup:</strong> Windows scheduled tasks created by the app will be removed on exit.</p>
+                    <div className="text-sm text-blue-700 mt-2 space-y-1">
+                        <p>This section allows you to manage the installation of device drivers required by your portable application.</p>
+                        <p><strong>INF File:</strong> The setup information file that contains all the information needed to install the driver.</p>
+                        <p><strong>Hardware ID:</strong> A vendor-defined identification string that Windows uses to match a device to a driver package.</p>
+                        <p><strong>Activation:</strong> Ensure the <code>Drivers</code> feature is enabled in the <em>Features</em> tab for these settings to take effect.</p>
                     </div>
                 </CardContent>
             </Card>

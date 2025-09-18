@@ -1,29 +1,48 @@
 import React from 'react';
 import { Plus, Minus, Settings } from 'lucide-react';
 
+interface LanguageConfig {
+  base: string;
+  default: string;
+  checkIfExists: string;
+  defaultIfNotExists: string;
+}
+
+interface LanguageString {
+  from: string;
+  to: string;
+}
+
+interface AdvancedConfig {
+  language: LanguageConfig;
+  languageStrings: LanguageString[];
+}
+
+interface InputFieldProps {
+  label: string;
+  value: string | number;
+  onChange: (value: any) => void;
+  type?: 'text' | 'select' | 'textarea';
+  placeholder?: any;
+  description?: string;
+  required?: boolean;
+}
+
 interface AdvancedTabProps {
-  config: any;
-  setConfig: React.Dispatch<any>;
+  config: AdvancedConfig;
+  setConfig: React.Dispatch<React.SetStateAction<any>>;
   activeConfigType: string;
-  InputField: React.ComponentType<any>;
-  CheckboxField: React.ComponentType<any>;
-  addArrayItem: (section: 'languageStrings', newItem: any) => void;
-  removeArrayItem: (section: 'languageStrings', index: number) => void;
-  updateArrayItem: (section: 'languageStrings', index: number, field: string, value: any) => void;
-  Button,
-  Card,
-  CardContent
+  InputField: React.ComponentType<InputFieldProps>;
+  Button: React.ComponentType<any>;
+  Card: React.ComponentType<any>;
+  CardContent: React.ComponentType<any>;
 }
 
 const AdvancedTab: React.FC<AdvancedTabProps> = ({
   config,
   setConfig,
   activeConfigType,
-  InputField,
-  CheckboxField,
-  addArrayItem,
-  removeArrayItem,
-  updateArrayItem,
+  InputField,  
   Button,
   Card,
   CardContent
@@ -50,28 +69,28 @@ const AdvancedTab: React.FC<AdvancedTabProps> = ({
               <InputField
                 label="Base Language Variable"
                 value={config.language.base || '%PortableApps.comLocaleglibc%'}
-                onChange={(value: string) => setConfig(prev => ({...prev, language: {...prev.language, base: value}}))}
+                onChange={(value: string) => setConfig((prev: any) => ({...prev, language: {...prev.language, base: value}}))}
                 placeholder="%PortableApps.comLocaleglibc%"
                 description="Base string for language detection"
               />
               <InputField
                 label="Default Language"
                 value={config.language.default || 'en'}
-                onChange={(value: string) => setConfig(prev => ({...prev, language: {...prev.language, default: value}}))}
+                onChange={(value: string) => setConfig((prev: any) => ({...prev, language: {...prev.language, default: value}}))}
                 placeholder="en"
                 description="Default language code if base not found"
               />
               <InputField
                 label="Check If Exists Path"
                 value={config.language.checkIfExists || ''}
-                onChange={(value: string) => setConfig(prev => ({...prev, language: {...prev.language, checkIfExists: value}}))}
+                onChange={(value: string) => setConfig((prev: any) => ({...prev, language: {...prev.language, checkIfExists: value}}))}
                 placeholder="%PAL:AppDir%\Languages\%PAL:LanguageCustom%\*.*"
                 description="Path to check for language files"
               />
               <InputField
                 label="Default If Not Exists"
                 value={config.language.defaultIfNotExists || ''}
-                onChange={(value: string) => setConfig(prev => ({...prev, language: {...prev.language, defaultIfNotExists: value}}))}
+                onChange={(value: string) => setConfig((prev: any) => ({...prev, language: {...prev.language, defaultIfNotExists: value}}))}
                 placeholder="en"
                 description="Fallback if language files don't exist"
               />
@@ -84,7 +103,10 @@ const AdvancedTab: React.FC<AdvancedTabProps> = ({
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-medium">Language String Mappings</h3>
           <Button 
-            onClick={() => addArrayItem('languageStrings', {from: '', to: ''})}
+            onClick={() => setConfig((prev: any) => ({
+              ...prev,
+              languageStrings: [...prev.languageStrings, { from: '', to: '' }]
+            }))}
             size="sm"
           >
             <Plus className="w-4 h-4 mr-1" />
@@ -108,7 +130,10 @@ const AdvancedTab: React.FC<AdvancedTabProps> = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => removeArrayItem('languageStrings', index)}
+                    onClick={() => setConfig((prev: any) => ({
+                      ...prev,
+                      languageStrings: prev.languageStrings.filter((_: any, i: number) => i !== index)
+                    }))}
                     className="text-red-600 hover:text-red-800"
                   >
                     <Minus className="w-4 h-4" />
@@ -117,15 +142,21 @@ const AdvancedTab: React.FC<AdvancedTabProps> = ({
                 <div className="grid grid-cols-2 gap-4">
                   <InputField
                     label="From (System Language)"
-                    value={lang.from || ''}
-                    onChange={(value: string) => updateArrayItem('languageStrings', index, 'from', value)}
+                    value={lang.from || ''}                    
+                    onChange={(value: string) => setConfig((prev: any) => ({
+                        ...prev,
+                        languageStrings: prev.languageStrings.map((item: LanguageString, i: number) => i === index ? { ...item, from: value } : item)
+                    }))}
                     placeholder="en_US"
                     description="System language code to match"
                   />
                   <InputField
                     label="To (App Language)"
-                    value={lang.to || ''}
-                    onChange={(value: string) => updateArrayItem('languageStrings', index, 'to', value)}
+                    value={lang.to || ''}                    
+                    onChange={(value: string) => setConfig((prev: any) => ({
+                        ...prev,
+                        languageStrings: prev.languageStrings.map((item: LanguageString, i: number) => i === index ? { ...item, to: value } : item)
+                    }))}
                     placeholder="en"
                     description="Application language code to use"
                   />
@@ -134,24 +165,6 @@ const AdvancedTab: React.FC<AdvancedTabProps> = ({
             </Card>
           ))
         )}
-      </div>
-
-      <div className="mb-8">
-        <h3 className="text-lg font-medium mb-4">Live Mode Configuration</h3>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="space-y-4">
-              <CheckboxField
-                label="Copy App to Local Drive"
-                checked={config.liveMode.copyApp === 'true'}
-                onChange={(checked: boolean) => setConfig(prev => ({...prev, liveMode: {...prev.liveMode, copyApp: checked ? 'true' : 'false'}}))}
-              />
-              <p className="text-sm text-gray-500 ml-6">
-                Copy application to writable location when running from read-only media (CD/DVD)
-              </p>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       <Card className="bg-purple-50 border-purple-200">

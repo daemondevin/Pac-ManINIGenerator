@@ -1,6 +1,6 @@
 /** @format */
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import { INIParser } from "../lib/parseini";
 import { PngIcoConverter, IConvertInputItem } from "../lib/png2icojs";
 import JSZip from "jszip";
@@ -42,7 +42,8 @@ import {
     Sun,
     FileText,
     Book,
-    Crop,
+    Crop,    
+    Laptop,
     Library,
     ShieldPlus,
     Image as ImageIcon
@@ -60,6 +61,9 @@ import ServicesTab from "./ServicesTab";
 import AssociationsTab from "./AssociationsTab";
 import RegDllsTab from "./RegDllsTab";
 import AdvancedTab from "./AdvancedTab";
+import TasksTab from "./TasksTab";
+import SymlinksTab from "./SymlinksTab";
+import RuntimesTab from "./RuntimesTab";
 import { Card, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
 
@@ -147,8 +151,8 @@ const ImageProcessor = ({
 
     return (
         <Card className="mb-6">
-            <CardContent>
-                <h3 className="text-lg font-medium mb-4">Icon Generator</h3>
+            <CardContent className="pt-6">
+                <h3 className="text-lg font-medium mb-4 text-gray-900 dark:text-gray-100">Icon Generator</h3>
 
                 <input
                     ref={fileInputRef}
@@ -187,12 +191,12 @@ const ImageProcessor = ({
 
                 {previewIcons && (
                     <div className="mt-6">
-                        <h4 className="font-medium mb-2">Preview Icons</h4>
+                        <h4 className="font-medium mb-2 text-gray-900 dark:text-gray-100">Preview Icons</h4>
                         <div className="grid grid-cols-3 gap-2">
                             {Object.entries(previewIcons).map(([name, src]) => (
                                 <div key={name} className="text-center">
                                     <img src={src} alt={name} className="mx-auto border rounded" />
-                                    <p className="text-xs mt-1">{name}</p>
+                                    <p className="text-xs mt-1 text-gray-600 dark:text-gray-400">{name}</p>
                                 </div>
                             ))}
                         </div>
@@ -329,6 +333,8 @@ const PACConfigTool = () => {
             key?: string;
             value?: string;
             entry?: string;
+            attribute?: string;
+            xPath?: string;
             caseSensitive?: string;
             encoding?: string;
             find?: string;
@@ -548,23 +554,27 @@ const PACConfigTool = () => {
         validateConfig();
     }, [config, activeConfigType]);
 
-    const addArrayItem = (section: keyof ConfigType, newItem: any) => {
+    type ArrayConfigKeys = {
+        [K in keyof ConfigType]: ConfigType[K] extends any[] ? K : never;
+    }[keyof ConfigType];
+
+    const addArrayItem = <K extends ArrayConfigKeys>(section: K, newItem: ConfigType[K][number]) => {
         setConfig((prev) => {
             const currentSection = prev[section];
-            if (Array.isArray(currentSection)) { 
+            if (Array.isArray(currentSection)) {
                 return {
                     ...prev,
                     [section]: [...currentSection, newItem],
                 };
             } else {
                 // Optionally handle non-array sections or throw an error
-                console.warn(`Section "${String(section)}" is not an array.`);
+                console.warn(`Section "${section as string}" is not an array.`);
                 return prev;
             }
         });
     };
 
-    const removeArrayItem = (section: keyof ConfigType, index: number) => {
+    const removeArrayItem = (section: ArrayConfigKeys, index: number) => {
         setConfig((prev) => {
             const currentSection = prev[section];
             if (Array.isArray(currentSection)) {
@@ -573,21 +583,21 @@ const PACConfigTool = () => {
                     [section]: currentSection.filter((_, i) => i !== index),
                 };
             } else {
-                console.warn(`Section "${section}" is not an array.`);
+                console.warn(`Section "${section as string}" is not an array.`);
                 return prev;
             }
         });
     };
 
-    const updateArrayItem = (
-        section: keyof ConfigType,
+    const updateArrayItem = <K extends ArrayConfigKeys>(
+        section: K,
         index: number,
-        field: string,
-        value: any
+        field: keyof ConfigType[K][number],
+        value: ConfigType[K][number][keyof ConfigType[K][number]]
     ) => {
         setConfig((prev) => ({
             ...prev,
-            [section]: (prev[section] as any[]).map((item, i) =>
+            [section]: (prev[section] as ConfigType[K]).map((item, i) =>
                 i === index ? { ...item, [field]: value } : item
             ),
         }));
@@ -1137,30 +1147,30 @@ const PACConfigTool = () => {
             const parsed = parser.parse(content);
             console.log(parsed);
             const newConfig = { ...config };
-            let isAppInfo = false;
-            if (parsed["Format"] && parsed["Format"]["Type"] === "PortableApps.comFormat") {
-                isAppInfo = true;
+
+            const isAppInfo = parsed.Format && parsed.Format.Type === 'PortableApps.comFormat';
+
+            if (isAppInfo) {
                 setActiveConfigType("appinfo");
+                // Reset only appInfo and dependencies parts for appinfo.ini
+                newConfig.appInfo = { ...config.appInfo }; // Start with existing defaults
+                newConfig.dependencies = { ...config.dependencies };
+
+                if (parsed.Details) Object.assign(newConfig.appInfo, parsed.Details);
+                if (parsed.Version) Object.assign(newConfig.appInfo, parsed.Version);
+                if (parsed.License) Object.assign(newConfig.appInfo, parsed.License);
+                if (parsed.Control) Object.assign(newConfig.appInfo, parsed.Control);
+                if (parsed.Team) Object.assign(newConfig.appInfo, parsed.Team);
+                if (parsed.SpecialPaths) Object.assign(newConfig.appInfo, parsed.SpecialPaths);
+                if (parsed.Dependencies) Object.assign(newConfig.dependencies, parsed.Dependencies);
+
             } else {
                 setActiveConfigType("launcher");
-            }
-            /*/ Split the content into lines and remove comments and empty lines
-            const lines = content.split("\n")
-                .map(line => line.trim())
-                .filter(line => line && !line.startsWith(";"));
-
-            let currentSection = "";
-
-            // Detect if this is an AppInfo.ini file
-            if (content.includes("[Format]") && content.includes("Type=PortableApps.comFormat")) {
-                isAppInfo = true;
-                setActiveConfigType("appinfo");
-            } else {
-                setActiveConfigType("launcher");
-            }*/
-
-            // Reset arrays that will be populated
-            if (!isAppInfo) {
+                // Reset launcher-specific parts
+                newConfig.launch = { ...config.launch };
+                newConfig.activate = { ...config.activate };
+                newConfig.liveMode = { ...config.liveMode };
+                newConfig.language = { ...config.language };
                 newConfig.environment = [];
                 newConfig.registryKeys = [];
                 newConfig.registryValues = [];
@@ -1170,418 +1180,93 @@ const PACConfigTool = () => {
                 newConfig.registryCopyKeys = [];
                 newConfig.fileWrites = [];
                 newConfig.filesMove = [];
+                newConfig.filesCleanup = [];
+                newConfig.directoriesMove = [];
+                newConfig.directoriesCleanupIfEmpty = [];
+                newConfig.directoriesCleanupForce = [];
                 newConfig.registerDLLs = [];
+                newConfig.services = [];
                 newConfig.scheduledTasks = [];
                 newConfig.drivers = [];
                 newConfig.firewallRules = [];
                 newConfig.filetypes = [];
                 newConfig.protocolHandlers = [];
                 newConfig.contextMenus = [];
+                newConfig.fonts = [];
                 newConfig.symLinks = [];
                 newConfig.junctions = [];
                 newConfig.hardLinks = [];
                 newConfig.vcRuntimes = [];
                 newConfig.netRuntimes = [];
-                newConfig.fonts = [];
-                newConfig.services = [];
-                newConfig.liveMode = {
-                    copyApp: "false"
-                };
-                newConfig.launch = {
-                    appName: "",
-                    programExecutable: "",
-                    programExecutable64: "",
-                    programExecutableWhenParameters: "",
-                    commandLineArguments: "",
-                    workingDirectory: "",
-                    runAsAdmin: "",
-                    cleanTemp: "",
-                    singlePortableAppInstance: "",
-                    singleAppInstance: "",
-                    closeEXE: "",
-                    splashTime: "",
-                    launchAfterSplashScreen: "",
-                    waitForProgram: "",
-                    waitForOtherInstances: "",
-                    refreshShellIcons: "",
-                    hideCommandLineWindow: "",
-                    noSpacesInPath: ""
-                };
-                newConfig.activate = {
-                    registry: "",
-                    regRedirection: "",
-                    registryValueWrite: "",
-                    regCopyKeys: "",
-                    redirection: "",
-                    forceRedirection: "",
-                    execAsUser: "",
-                    services: "",
-                    regDLLs: "",
-                    drivers: "",
-                    links: "",
-                    tasks: "",
-                    java: "",
-                    jdk: "",
-                    xml: "",
-                    ghostscript: "",
-                    firewall: "",
-                    runtime: "",
-                    associations: "",
-                    fonts: "",
-                    fileWriteReplace: "",
-                    fileCleanup: "",
-                    directoryCleanup: ""
-                };
-            }
+                newConfig.languageStrings = [];
 
-            //let currentService: any = null;
-            /*
-            lines.forEach(line => {
-                // Section header
-                if (line.startsWith("[") && line.endsWith("]")) {
-                    currentSection = line.slice(1, -1).toLowerCase();
-                    if (currentSection.startsWith("service")) {
-                        currentService = {};
-                        newConfig.services.push(currentService);
-                    }
-                    return;
-                }
+                if (parsed.Launch) Object.assign(newConfig.launch, parsed.Launch);
+                if (parsed.Activate) Object.assign(newConfig.activate, parsed.Activate);
+                if (parsed.LiveMode) Object.assign(newConfig.liveMode, parsed.LiveMode);
+                if (parsed.Language) Object.assign(newConfig.language, parsed.Language);
+                if (parsed.Environment) newConfig.environment = Object.entries(parsed.Environment).map(([name, value]) => ({ name, value: String(value) }));
+                if (parsed.RegistryKeys) newConfig.registryKeys = Object.entries(parsed.RegistryKeys).map(([name, path]) => ({ name, path: String(path) }));
+                if (parsed.FilesMove) newConfig.filesMove = Object.entries(parsed.FilesMove).map(([source, destination]) => ({ source, destination: String(destination) }));
+                if (parsed.DirectoriesMove) newConfig.directoriesMove = Object.entries(parsed.DirectoriesMove).map(([source, destination]) => ({ source, destination: String(destination) }));
+                if (parsed.LanguageStrings) newConfig.languageStrings = Object.entries(parsed.LanguageStrings).map(([from, to]) => ({ from, to: String(to) }));
 
-                // Key-value pair
-                const [key, ...valueParts] = line.split("=");
-                const value = valueParts.join("="); // Rejoin in case value contains =
+                // Handle numbered sections
+                for (const sectionName in parsed) {
+                    const sectionData = parsed[sectionName];
+                    if (typeof sectionData !== 'object' || sectionData === null) continue;
 
-                if (!key || value === undefined) return;
+                    const match = sectionName.match(/^([a-zA-Z]+)(\d+)$/);
+                    if (!match) continue;
 
-                const keyTrim = key.trim();
-                const valueTrim = value.trim();
-            
-                if (isAppInfo) {
-                    switch (currentSection.toLowerCase()) {
-                        case "details":
-                            if (keyTrim in newConfig.appInfo) {
-                                (newConfig.appInfo as any)[keyTrim] = valueTrim;
-                            }
+                    const baseName = match[1];
+                    
+                    switch (baseName) {
+                        case 'FileWrite':
+                            newConfig.fileWrites.push(sectionData as any);
                             break;
-                        case "version":
-                            if (keyTrim === "PackageVersion") newConfig.appInfo.packageVersion = valueTrim;
-                            if (keyTrim === "DisplayVersion") newConfig.appInfo.displayVersion = valueTrim;
+                        case 'RegisterDLL':
+                            newConfig.registerDLLs.push(sectionData as any);
                             break;
-                        case "license":
-                            if (keyTrim === "Shareable") newConfig.appInfo.shareable = valueTrim;
-                            if (keyTrim === "OpenSource") newConfig.appInfo.openSource = valueTrim;
-                            if (keyTrim === "Freeware") newConfig.appInfo.freeware = valueTrim;
-                            if (keyTrim === "CommercialUse") newConfig.appInfo.commercialUse = valueTrim;
-                            if (keyTrim === "EULAVersion") newConfig.appInfo.eulaVersion = valueTrim;
+                        case 'Service':
+                            newConfig.services.push(sectionData as any);
                             break;
-                        case "control":
-                            if (keyTrim === "Icons") newConfig.appInfo.icons = valueTrim;
-                            if (keyTrim === "Start") newConfig.appInfo.start = valueTrim;
-                            if (keyTrim === "ExtractIcon") newConfig.appInfo.extractIcon = valueTrim;
+                        case 'Font':
+                            newConfig.fonts.push(sectionData as any);
                             break;
-                        case "team":
-                            if (keyTrim === "Developer") newConfig.appInfo.developer = valueTrim;
-                            if (keyTrim === "Contributors") newConfig.appInfo.contributors = valueTrim;
-                            if (keyTrim === "Creator") newConfig.appInfo.creator = valueTrim;
-                            if (keyTrim === "CertSigning") newConfig.appInfo.certSigning = valueTrim;
-                            if (keyTrim === "CertAlgorithm") newConfig.appInfo.certAlgorithm = valueTrim;
-                            if (keyTrim === "CertExtension") newConfig.appInfo.certExtension = valueTrim;
-                            if (keyTrim === "CertTimestamp") newConfig.appInfo.certTimestamp = valueTrim;
+                        case 'ScheduledTask':
+                            newConfig.scheduledTasks.push(sectionData as any);
                             break;
-                        case "specialpaths":
-                            if (keyTrim === "Plugins") newConfig.appInfo.plugins = valueTrim;
+                        case 'Driver':
+                            newConfig.drivers.push(sectionData as any);
+                            break;
+                        case 'FirewallRule':
+                            newConfig.firewallRules.push(sectionData as any);
+                            break;
+                        case 'FileAssociation':
+                            newConfig.filetypes.push(sectionData as any);
+                            break;
+                        case 'ProtocolHandler':
+                            newConfig.protocolHandlers.push(sectionData as any);
+                            break;
+                        case 'ContextMenu':
+                            newConfig.contextMenus.push(sectionData as any);
+                            break;
+                        case 'SymLink':
+                            newConfig.symLinks.push(sectionData as any);
+                            break;
+                        case 'Junction':
+                            newConfig.junctions.push(sectionData as any);
+                            break;
+                        case 'HardLink':
+                            newConfig.hardLinks.push(sectionData as any);
+                            break;
+                        case 'VCRuntime':
+                            newConfig.vcRuntimes.push(sectionData as any);
+                            break;
+                        case 'NETRuntime':
+                            newConfig.netRuntimes.push(sectionData as any);
                             break;
                     }
-                } else {
-                    switch (currentSection.toLowerCase()) {
-                        case "launch":
-                            if (keyTrim in newConfig.launch) {
-                                (newConfig.launch as any)[keyTrim] = valueTrim;
-                            }
-                            break;
-                        case "activate":
-                            if (keyTrim in newConfig.activate) {
-                                (newConfig.activate as any)[keyTrim] = valueTrim;
-                            }
-                            break;
-                        case "environment":
-                            newConfig.environment.push({
-                                name: keyTrim,
-                                value: valueTrim
-                            });
-                            break;
-                        case "registrykeys":
-                            newConfig.registryKeys.push({
-                                name: keyTrim,
-                                path: valueTrim
-                            });
-                            break;
-                        case "registryvaluewrite":
-                            const [type, val] = valueTrim.split(":", 2);
-                            newConfig.registryValues.push({
-                                key: keyTrim,
-                                type: type,
-                                value: val || ""
-                            });
-                            break;
-                        case "filesmove":
-                            newConfig.filesMove.push({
-                                source: keyTrim,
-                                destination: valueTrim
-                            });
-                            break;
-                        default:
-                            if (currentSection.startsWith("service") && currentService) {
-                                if (keyTrim === "Name") currentService.name = valueTrim;
-                                if (keyTrim === "Path") currentService.path = valueTrim;
-                                if (keyTrim === "Type") currentService.type = valueTrim;
-                                if (keyTrim === "Start") currentService.start = valueTrim;
-                                if (keyTrim === "Depend") currentService.depend = valueTrim;
-                                if (keyTrim === "IfExists") currentService.ifExists = valueTrim;
-                            }
-                            break;
-                    }
-                }
-            });*/
-
-            // Map the parsed INI data to our config structure
-            //const newConfig = { ...config };
-
-            // Handle AppInfo.ini sections
-            if (isAppInfo) {
-                if (parsed.Details) {
-                    Object.assign(newConfig.appInfo, parsed.Details);
-                }
-                if (parsed.Version) {
-                    newConfig.appInfo.packageVersion = parsed.Version.PackageVersion?.toString() || "";
-                    newConfig.appInfo.displayVersion = parsed.Version.DisplayVersion?.toString() || "";
-                }
-                if (parsed.License) {
-                    newConfig.appInfo.shareable = parsed.License.Shareable?.toString() || "";
-                    newConfig.appInfo.openSource = parsed.License.OpenSource?.toString() || "";
-                    newConfig.appInfo.freeware = parsed.License.Freeware?.toString() || "";
-                    newConfig.appInfo.commercialUse = parsed.License.CommercialUse?.toString() || "";
-                    newConfig.appInfo.eulaVersion = parsed.License.EULAVersion?.toString() || "";
-                }
-                if (parsed.Control) {
-                    newConfig.appInfo.icons = parsed.Control.Icons?.toString() || "";
-                    newConfig.appInfo.start = parsed.Control.Start?.toString() || "";
-                    newConfig.appInfo.extractIcon = parsed.Control.ExtractIcon?.toString() || "";
-                }
-            } else {
-                if (parsed.Launch) {
-                    Object.assign(newConfig.launch, parsed.Launch);
-                }
-                if (parsed.Activate) {
-                    Object.assign(newConfig.activate, parsed.Activate);
-                }
-                if (parsed.Environment) {
-                    newConfig.environment = Object.entries(parsed.Environment).map(([name, value]) => ({
-                        name,
-                        value: value.toString()
-                    }));
-                }
-                if (parsed.RegistryKeys) {
-                    // RegistryKeys is usually an object, but you want an array of { name, path }
-                    newConfig.registryKeys = Object.entries(parsed.RegistryKeys).map(([name, path]) => ({
-                        name,
-                        path: path.toString()
-                    }));
-                }
-                if (parsed.RegistryValueWrite) {
-                    // RegistryValueWrite: { key: { type: value } }
-                    newConfig.registryValues = Object.entries(parsed.RegistryValueWrite).map(([key, val]) => {
-                        // val might be an object: { type: value }
-                        if (typeof val === 'object' && val !== null) {
-                            const [type, value] = Object.entries(val)[0];
-                            return { key, type, value: value.toString() };
-                        }
-                        // fallback: treat as string
-                        return { key, type: '', value: val.toString() };
-                    });
-                }
-                if (parsed.RegistryCleanupIfEmpty) {
-                    newConfig.registryCleanupIfEmpty = Object.entries(parsed.RegistryCleanupIfEmpty).map(([path]) => ({ path }));
-                }
-                if (parsed.RegistryCleanupForce) {
-                    newConfig.registryCleanupForce = Object.entries(parsed.RegistryCleanupForce).map(([path]) => ({ path }));
-                }
-                if (parsed.RegistryValueBackupDelete) {
-                    newConfig.registryValueBackupDelete = Object.entries(parsed.RegistryValueBackupDelete).map(([path]) => ({ path }));
-                }
-                if (parsed.RegistryCopyKeys) {
-                    newConfig.registryCopyKeys = Object.entries(parsed.RegistryCopyKeys).map(([path]) => ({ path }));
-                }
-                if (parsed.FileWrites) {
-                    newConfig.fileWrites = Object.entries(parsed.FileWrites).map(([file, props]) => {
-                        const baseProps = {
-                            type: typeof props === 'object' ? (props as any).type || 'Replace' : 'Replace',
-                            file
-                        };
-                        if (typeof props === 'object') {
-                            const { section, key, value, entry, caseSensitive, encoding, find, replace } = props as any;
-                            return {
-                                ...baseProps,
-                                ...(section ? { section } : {}),
-                                ...(key ? { key } : {}),
-                                ...(value ? { value } : {}),
-                                ...(entry ? { entry } : {}),
-                                ...(caseSensitive ? { caseSensitive } : {}),
-                                ...(encoding ? { encoding } : {}),
-                                ...(find ? { find } : {}),
-                                ...(replace ? { replace } : {})
-                            };
-                        }
-                        return baseProps;
-                    });
-                }
-                if (parsed.FilesMove) {
-                    newConfig.filesMove = Object.entries(parsed.FilesMove).map(([source, destination]) => ({
-                        source,
-                        destination: destination.toString()
-                    }));
-                }
-                if (parsed.RegisterDLLs) {
-                    newConfig.registerDLLs = Object.entries(parsed.RegisterDLLs).map(([key, props]) => ({
-                        ...(typeof props === 'object' ? props : {}),
-                        file: key
-                    }));
-                }
-                if (parsed.ScheduledTasks) {
-                    newConfig.scheduledTasks = Object.entries(parsed.ScheduledTasks).map(([name, props]) => ({
-                        name,
-                        command: typeof props === 'object' ? (props as any).command || '' : '',
-                        schedule: typeof props === 'object' ? (props as any).schedule || 'ONCE' : 'ONCE',
-                        ...(typeof props === 'object' ? props : {})
-                    }));
-                }
-                if (parsed.Drivers) {
-                    newConfig.drivers = Object.entries(parsed.Drivers).map(([infFile, props]) => ({
-                        infFile,
-                        ...(typeof props === 'object' ? props : {})
-                    }));
-                }
-                if (parsed.FirewallRules) {
-                    newConfig.firewallRules = Object.entries(parsed.FirewallRules).map(([name, props]) => ({
-                        name,
-                        direction: typeof props === 'object' ? (props as any).direction || 'Inbound' : 'Inbound',
-                        action: typeof props === 'object' ? (props as any).action || 'Allow' : 'Allow',
-                        ...(typeof props === 'object' ? props : {})
-                    }));
-                }
-                if (parsed.Filetypes) {
-                    newConfig.filetypes = Object.entries(parsed.Filetypes).map(([extension, props]) => ({
-                        extension,
-                        progId: typeof props === 'object' ? (props as any).progId || '' : '',
-                        description: typeof props === 'object' ? (props as any).description || '' : '',
-                        openCommand: typeof props === 'object' ? (props as any).openCommand || '' : '',
-                        defaultIcon: typeof props === 'object' ? (props as any).defaultIcon : undefined,
-                        editCommand: typeof props === 'object' ? (props as any).editCommand : undefined,
-                        printCommand: typeof props === 'object' ? (props as any).printCommand : undefined,
-                        ifExists: typeof props === 'object' ? (props as any).ifExists : undefined,
-                        priority: typeof props === 'object' ? (props as any).priority : undefined,
-                        mimeType: typeof props === 'object' ? (props as any).mimeType : undefined
-                    }));
-                }
-                if (parsed.ProtocolHandlers) {
-                    newConfig.protocolHandlers = Object.entries(parsed.ProtocolHandlers).map(([protocol, props]) => ({
-                        protocol,
-                        progId: typeof props === 'object' ? (props as any).progId || '' : '',
-                        description: typeof props === 'object' ? (props as any).description || '' : '',
-                        defaultIcon: typeof props === 'object' ? (props as any).defaultIcon : undefined,
-                        openCommand: typeof props === 'object' ? (props as any).openCommand || '' : '',
-                        ifExists: typeof props === 'object' ? (props as any).ifExists : undefined
-                    }));
-                }
-                if (parsed.ContextMenus) {
-                    newConfig.contextMenus = Object.entries(parsed.ContextMenus).map(([extension, props]) => ({
-                        extension,
-                        menuText: typeof props === 'object' ? (props as any).menuText || '' : '',
-                        menuCommand: typeof props === 'object' ? (props as any).menuCommand || '' : '',
-                        menuIcon: typeof props === 'object' ? (props as any).menuIcon : undefined,
-                        position: typeof props === 'object' ? (props as any).position : undefined,
-                        ifExists: typeof props === 'object' ? (props as any).ifExists : undefined,
-                        condition: typeof props === 'object' ? (props as any).condition : undefined
-                    }));
-                }
-                if (parsed.SymLinks) {
-                    newConfig.symLinks = Object.entries(parsed.SymLinks).map(([linkPath, props]) => ({
-                        linkPath,
-                        targetPath: typeof props === 'object' ? (props as any).targetPath || '' : '',
-                        type: typeof props === 'object' ? (props as any).type : undefined,
-                        ifExists: typeof props === 'object' ? (props as any).ifExists : undefined,
-                        required: typeof props === 'object' ? (props as any).required : undefined,
-                        relative: typeof props === 'object' ? (props as any).relative : undefined,
-                        temporary: typeof props === 'object' ? (props as any).temporary : undefined
-                    }));
-                }
-                if (parsed.Junctions) {
-                    newConfig.junctions = Object.entries(parsed.Junctions).map(([junctionPath, props]) => ({
-                        junctionPath,
-                        targetPath: typeof props === 'object' ? (props as any).targetPath || '' : '',
-                        ifExists: typeof props === 'object' ? (props as any).ifExists : undefined,
-                        required: typeof props === 'object' ? (props as any).required : undefined,
-                        temporary: typeof props === 'object' ? (props as any).temporary : undefined
-                    }));
-                }
-                if (parsed.HardLinks) {
-                    newConfig.hardLinks = Object.entries(parsed.HardLinks).map(([linkPath, props]) => ({
-                        linkPath,
-                        targetPath: typeof props === 'object' ? (props as any).targetPath || '' : '',
-                        ifExists: typeof props === 'object' ? (props as any).ifExists : undefined,
-                        required: typeof props === 'object' ? (props as any).required : undefined,
-                        temporary: typeof props === 'object' ? (props as any).temporary : undefined
-                    }));
-                }
-                if (parsed.VCRuntimes) {
-                    newConfig.vcRuntimes = Object.entries(parsed.VCRuntimes).map(([version, props]) => ({
-                        version,
-                        architecture: typeof props === 'object' ? (props as any).architecture || '' : '',
-                        mode: typeof props === 'object' ? (props as any).mode : undefined,
-                        action: typeof props === 'object' ? (props as any).action : undefined,
-                        source: typeof props === 'object' ? (props as any).source : undefined,
-                        minVersion: typeof props === 'object' ? (props as any).minVersion : undefined,
-                        required: typeof props === 'object' ? (props as any).required : undefined
-                    }));
-                }
-                if (parsed.NETRuntimes) {
-                    newConfig.netRuntimes = Object.entries(parsed.NETRuntimes).map(([framework, props]) => ({
-                        framework,
-                        architecture: typeof props === 'object' ? (props as any).architecture : undefined,
-                        mode: typeof props === 'object' ? (props as any).mode : undefined,
-                        action: typeof props === 'object' ? (props as any).action : undefined,
-                        source: typeof props === 'object' ? (props as any).source : undefined,
-                        minVersion: typeof props === 'object' ? (props as any).minVersion : undefined,
-                        required: typeof props === 'object' ? (props as any).required : undefined
-                    }));
-                }
-                if (parsed.Fonts) {
-                    newConfig.fonts = Object.entries(parsed.Fonts).map(([file, props]) => ({
-                        file,
-                        name: typeof props === 'object' ? (props as any).name : undefined,
-                        scope: typeof props === 'object' ? (props as any).scope : undefined,
-                        ifExists: typeof props === 'object' ? (props as any).ifExists : undefined,
-                        required: typeof props === 'object' ? (props as any).required : undefined,
-                        validate: typeof props === 'object' ? (props as any).validate : undefined
-                    }));
-                }
-                if (parsed.Services) {
-                    newConfig.services = Object.entries(parsed.Services).map(([name, props]) => ({
-                        name,
-                        path: typeof props === 'object' ? (props as any).path || '' : '',
-                        type: typeof props === 'object' ? (props as any).type : undefined,
-                        start: typeof props === 'object' ? (props as any).start : undefined,
-                        depend: typeof props === 'object' ? (props as any).depend : undefined,
-                        ifExists: typeof props === 'object' ? (props as any).ifExists : undefined,
-                        description: typeof props === 'object' ? (props as any).description || '' : '',
-                        account: typeof props === 'object' ? (props as any).account || '' : '',
-                        password: typeof props === 'object' ? (props as any).password || '' : '',
-                        timeout: typeof props === 'object' ? Number((props as any).timeout) || 0 : 0,
-                        critical: typeof props === 'object' ? !!(props as any).critical : false
-                    }));
-                }
-                if (parsed.LiveMode) {
-                    Object.assign(newConfig.liveMode, parsed.LiveMode);
                 }
             }
 
@@ -1699,14 +1384,14 @@ const PACConfigTool = () => {
 
     const Input = ({ className = "", ...props }) => (
         <input
-            className={`flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+            className={`flex h-10 w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 dark:placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
             {...props}
         />
     );
 
     const Textarea = ({ className = "", ...props }) => (
         <textarea
-            className={`flex min-h-[80px] w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+            className={`flex min-h-[80px] w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm ring-offset-background placeholder:text-gray-500 dark:placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
             {...props}
         />
     );
@@ -1726,7 +1411,7 @@ const PACConfigTool = () => {
             <select
                 value={value}
                 onChange={(e) => onValueChange(e.target.value)}
-                className={`flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}>
+                className={`flex h-10 w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}>
                 {children}
             </select>
         );
@@ -1748,7 +1433,7 @@ const PACConfigTool = () => {
             id={id}
             checked={checked}
             onChange={(e) => onCheckedChange(e.target.checked)}
-            className={`h-4 w-4 rounded border border-gray-300 text-blue-600 focus:ring-blue-500 ${className}`}
+            className={`h-4 w-4 rounded border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-blue-600 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 ${className}`}
         />
     );
 
@@ -1763,7 +1448,7 @@ const PACConfigTool = () => {
     }) => (
         <label
             htmlFor={htmlFor}
-            className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${className}`}>
+            className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-gray-700 dark:text-gray-300 ${className}`}>
             {children}
         </label>
     );
@@ -1776,7 +1461,7 @@ const PACConfigTool = () => {
         className?: string;
     }) => (
         <div
-            className={`rounded-lg border border-gray-200 bg-white shadow-sm ${className}`}>
+            className={`rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm ${className}`}>
             {children}
         </div>
     );
@@ -1808,7 +1493,7 @@ const PACConfigTool = () => {
         description,
     }: InputFieldProps) => (
         <div className="mb-4">
-            <Label className="text-sm font-medium text-gray-700 mb-1 block">
+            <Label className="mb-1 block">
                 {label} {required && <span className="text-red-500">*</span>}
             </Label>
             {type === "textarea" ? (
@@ -1837,7 +1522,7 @@ const PACConfigTool = () => {
                 />
             )}
             {description && (
-                <p className="text-sm text-gray-500 mt-1">{description}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{description}</p>
             )}
         </div>
     );
@@ -1853,12 +1538,10 @@ const PACConfigTool = () => {
         <div className="mb-4">
             <div className="flex items-center space-x-2">
                 <Checkbox checked={checked} onCheckedChange={onChange} />
-                <Label className="text-sm font-medium text-gray-700">
-                    {label}
-                </Label>
+                <Label>{label}</Label>
             </div>
             {description && (
-                <p className="text-sm text-gray-500 mt-1 ml-6">{description}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 ml-6">{description}</p>
             )}
         </div>
     );
@@ -1883,10 +1566,11 @@ const PACConfigTool = () => {
             <Button
                 variant="ghost"
                 onClick={onClick}
-                className={`w-full justify-start ${isActive
-                    ? "bg-blue-600 text-white hover:bg-blue-700"
-                    : "text-gray-700 hover:bg-gray-100"
-                    }`}>
+                className={`w-full justify-start ${
+                    isActive
+                        ? "bg-blue-600 text-white hover:bg-blue-700"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                }`}>
                 <Icon className="w-4 h-4 mr-2" />
                 {tab.label}
             </Button>
@@ -1894,30 +1578,30 @@ const PACConfigTool = () => {
     };
 
     return (
-        <div
-            className={`min-h-screen dark bg-gray-900`}>
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
             {/* Header */}
-            <div className="bg-white shadow-sm border-b border-gray-200">
+            <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
                 <div className="max-w-7xl mx-auto px-4 py-4">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-900">
+                            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50">
                                 PortableApps Compiler
                             </h1>
-                            <p className="text-gray-600">
+                            <p className="text-gray-600 dark:text-gray-400">
                                 AppInfo/Launcher INI Configuration Generator
                             </p>
                         </div>
-                        <div className="flex gap-3 items-center">
-                            <div className="flex bg-gray-100 rounded-lg p-1">
+                        <div className="flex items-center gap-3">
+                            <div className="flex p-1 rounded-lg bg-gray-100 dark:bg-gray-900">
                                 <button
                                     onClick={() =>
                                         setActiveConfigType("launcher")
                                     }
-                                    className={`flex items-center px-3 py-2 rounded-md transition-colors ${activeConfigType === "launcher"
-                                        ? "bg-white text-gray-900 shadow-sm"
-                                        : "text-gray-600 hover:text-gray-900"
-                                        }`}>
+                                    className={`flex items-center rounded-md px-3 py-2 transition-colors ${
+                                        activeConfigType === "launcher"
+                                            ? "bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-white"
+                                            : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                                    }`}>
                                     <Settings className="w-4 h-4 mr-2" />
                                     Launcher.ini
                                 </button>
@@ -1925,28 +1609,40 @@ const PACConfigTool = () => {
                                     onClick={() =>
                                         setActiveConfigType("appinfo")
                                     }
-                                    className={`flex items-center px-3 py-2 rounded-md transition-colors ${activeConfigType === "appinfo"
-                                        ? "bg-white text-gray-900 shadow-sm"
-                                        : "text-gray-600 hover:text-gray-900"
-                                        }`}>
+                                    className={`flex items-center rounded-md px-3 py-2 transition-colors ${
+                                        activeConfigType === "appinfo"
+                                            ? "bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-white"
+                                            : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                                    }`}>
                                     <FileText className="w-4 h-4 mr-2" />
                                     AppInfo.ini
                                 </button>
                             </div>
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                onClick={() =>
-                                    setTheme(
-                                        theme === "light" ? "dark" : "light"
-                                    )
-                                }>
-                                {theme === "light" ? (
-                                    <Moon className="h-4 w-4" />
-                                ) : (
-                                    <Sun className="h-4 w-4" />
-                                )}
-                            </Button>
+
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="icon">
+                                        <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                                        <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                                        <span className="sr-only">Toggle theme</span>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => setTheme("light")}>
+                                        <Sun className="mr-2 h-4 w-4" />
+                                        <span>Light</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setTheme("dark")}>
+                                        <Moon className="mr-2 h-4 w-4" />
+                                        <span>Dark</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setTheme("system")}>
+                                        <Laptop className="mr-2 h-4 w-4" />
+                                        <span>System</span>
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+
                             <input
                                 type="file"
                                 accept=".ini,.txt"
@@ -2067,11 +1763,9 @@ const PACConfigTool = () => {
                                         setConfig={setConfig}
                                         activeConfigType={activeConfigType}
                                         InputField={InputField}
-                                        CheckboxField={CheckboxField}
-                                        addArrayItem={addArrayItem}
-                                        removeArrayItem={removeArrayItem}
-                                        updateArrayItem={updateArrayItem}
                                         Button={Button}
+                                        // @ts-ignore
+                                        CheckboxField={CheckboxField}
                                         Card={Card}
                                         CardContent={CardContent}
                                     />
@@ -2084,9 +1778,6 @@ const PACConfigTool = () => {
                                         setConfig={setConfig}
                                         activeConfigType={activeConfigType}
                                         InputField={InputField}
-                                        addArrayItem={addArrayItem}
-                                        removeArrayItem={removeArrayItem}
-                                        updateArrayItem={updateArrayItem}
                                         Button={Button}
                                         Card={Card}
                                         CardContent={CardContent}
@@ -2101,9 +1792,6 @@ const PACConfigTool = () => {
                                         activeConfigType={activeConfigType}
                                         InputField={InputField}
                                         CheckboxField={CheckboxField}
-                                        addArrayItem={addArrayItem}
-                                        removeArrayItem={removeArrayItem}
-                                        updateArrayItem={updateArrayItem}
                                         Button={Button}
                                         Card={Card}
                                         CardContent={CardContent}
@@ -2111,6 +1799,31 @@ const PACConfigTool = () => {
                                 )}
 
                                 {/* Associations Tab */}
+                                {activeTab === "tasks" && (
+                                    <TasksTab
+                                        config={config}
+                                        setConfig={setConfig}
+                                        activeConfigType={activeConfigType}
+                                        InputField={InputField}
+                                        Button={Button}
+                                        CheckboxField={CheckboxField}
+                                        Card={Card}
+                                        CardContent={CardContent}
+                                    />
+                                )}
+
+                                {activeTab === "symlinks" && (
+                                    <SymlinksTab
+                                        config={config}
+                                        setConfig={setConfig}
+                                        activeConfigType={activeConfigType}
+                                        InputField={InputField}
+                                        Button={Button}
+                                        CheckboxField={CheckboxField}
+                                        Card={Card}
+                                        CardContent={CardContent}
+                                    />
+                                )}
                                 {activeTab === "associations" && (
                                     <AssociationsTab
                                         config={config}
@@ -2118,9 +1831,6 @@ const PACConfigTool = () => {
                                         activeConfigType={activeConfigType}
                                         InputField={InputField}
                                         CheckboxField={CheckboxField}
-                                        addArrayItem={addArrayItem}
-                                        removeArrayItem={removeArrayItem}
-                                        updateArrayItem={updateArrayItem}
                                         Button={Button}
                                         Card={Card}
                                         CardContent={CardContent}
@@ -2134,11 +1844,20 @@ const PACConfigTool = () => {
                                         setConfig={setConfig}
                                         activeConfigType={activeConfigType}
                                         InputField={InputField}
-                                        addArrayItem={addArrayItem}
-                                        CheckboxField={CheckboxField}
-                                        removeArrayItem={removeArrayItem}
-                                        updateArrayItem={updateArrayItem}
                                         Button={Button}
+                                        CheckboxField={CheckboxField}
+                                        Card={Card}
+                                        CardContent={CardContent}
+                                    />
+                                )}
+                                {activeTab === "runtime" && (
+                                    <RuntimesTab
+                                        config={config}
+                                        setConfig={setConfig}
+                                        activeConfigType={activeConfigType as any}
+                                        InputField={InputField}
+                                        Button={Button}
+                                        CheckboxField={CheckboxField}
                                         Card={Card}
                                         CardContent={CardContent}
                                     />
@@ -2152,11 +1871,7 @@ const PACConfigTool = () => {
                                         activeConfigType={activeConfigType}
                                         InputField={InputField}
                                         CheckboxField={CheckboxField}
-                                        addArrayItem={addArrayItem}
-                                        removeArrayItem={removeArrayItem}
-                                        updateArrayItem={updateArrayItem}
                                         Button={Button}
-                                        CheckboxField={CheckboxField}
                                         Card={Card}
                                         CardContent={CardContent}
                                     />
@@ -2169,11 +1884,8 @@ const PACConfigTool = () => {
                                         setConfig={setConfig}
                                         activeConfigType={activeConfigType}
                                         InputField={InputField}
-                                        CheckboxField={CheckboxField}
-                                        addArrayItem={addArrayItem as any}
-                                        removeArrayItem={removeArrayItem as any}
-                                        updateArrayItem={updateArrayItem as any}
                                         Button={Button}
+                                        CheckboxField={CheckboxField}
                                         Card={Card}
                                         CardContent={CardContent}
                                     />
@@ -2186,10 +1898,6 @@ const PACConfigTool = () => {
                                         setConfig={setConfig}
                                         activeConfigType={activeConfigType}
                                         InputField={InputField}
-                                        CheckboxField={CheckboxField}
-                                        addArrayItem={addArrayItem}
-                                        removeArrayItem={removeArrayItem}
-                                        updateArrayItem={updateArrayItem}
                                         Button={Button}
                                         Card={Card}
                                         CardContent={CardContent}
@@ -2211,5 +1919,74 @@ const PACConfigTool = () => {
         </div>
     );
 };
+
+const DropdownMenu = ({ children }: { children: React.ReactNode }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const contextValue = { isOpen, setIsOpen };
+
+    return (
+        <DropdownMenuContext.Provider value={contextValue}>
+            <div className="relative inline-block text-left" ref={menuRef}>
+                {children}
+            </div>
+        </DropdownMenuContext.Provider>
+    );
+};
+
+const DropdownMenuContext = React.createContext({ isOpen: false, setIsOpen: (isOpen: boolean) => {} });
+
+const DropdownMenuTrigger = ({ children, asChild = false }: { children: React.ReactNode, asChild?: boolean }) => {
+    const { setIsOpen } = useContext(DropdownMenuContext);
+    const child = React.Children.only(children) as React.ReactElement;
+
+    if (asChild) {
+        return React.cloneElement(child, {
+            onClick: () => setIsOpen(prev => !prev),
+        });
+    }
+
+    return <div onClick={() => setIsOpen(prev => !prev)}>{children}</div>;
+};
+
+const DropdownMenuContent = ({ children, align = 'start', className = '' }: { children: React.ReactNode, align?: 'start' | 'end', className?: string }) => {
+    const { isOpen } = useContext(DropdownMenuContext);
+    if (!isOpen) return null;
+
+    const alignmentClasses = align === 'end' ? 'right-0' : 'left-0';
+
+    return (
+        <div className={`absolute z-50 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none ${alignmentClasses} ${className}`}>
+            <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
+                {children}
+            </div>
+        </div>
+    );
+};
+
+const DropdownMenuItem = ({ children, onClick }: { children: React.ReactNode, onClick: () => void }) => {
+    const { setIsOpen } = useContext(DropdownMenuContext);
+    return (
+        <button
+            onClick={() => { onClick(); setIsOpen(false); }}
+            className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+            role="menuitem"
+        >
+            {children}
+        </button>
+    );
+};
+
 
 export default PACConfigTool;

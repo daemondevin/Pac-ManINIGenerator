@@ -21,9 +21,6 @@ interface ServicesTabProps {
     setConfig: (config: any) => void;
     activeConfigType: string;
     InputField: React.ComponentType<any>;
-    addArrayItem: (section: 'services', value: any) => void;
-    removeArrayItem: (section: 'services', index: number) => void;
-    updateArrayItem: (section: 'services', index: number, field: string, value: any) => void;
     Button: React.ComponentType<any>;
     CheckboxField: React.ComponentType<any>;
     Card: React.ComponentType<any>;
@@ -35,9 +32,6 @@ const ServicesTab: React.FC<ServicesTabProps> = ({
     setConfig,
     activeConfigType,
     InputField,
-    addArrayItem,
-    removeArrayItem,
-    updateArrayItem,
     Button,
     CheckboxField,
     Card,
@@ -55,13 +49,16 @@ const ServicesTab: React.FC<ServicesTabProps> = ({
 
     return (
         <div>
-            <h2 className="text-xl font-semibold mb-6 text-gray-900">Windows Services & DLL Registration</h2>
+            <h2 className="text-xl font-semibold mb-6 text-gray-900">Windows Services</h2>
 
             <div className="mb-8">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-medium">Windows Services</h3>
                     <Button
-                        onClick={() => addArrayItem('services', { name: '', path: '', type: 'own', start: 'demand', depend: '', ifExists: 'skip', description: '', account: '', password: '', timeout: 30000, critical: false })}
+                        onClick={() => setConfig((prev: any) => ({
+                            ...prev,
+                            services: [...prev.services, { name: '', path: '', type: 'own', start: 'demand', depend: '', ifExists: 'skip', description: '', account: '', password: '', timeout: 30000, critical: false }]
+                        }))}
                         size="sm"
                     >
                         <Plus className="w-4 h-4 mr-1" />
@@ -85,7 +82,10 @@ const ServicesTab: React.FC<ServicesTabProps> = ({
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() => removeArrayItem('services', index)}
+                                        onClick={() => setConfig((prev: any) => ({
+                                            ...prev,
+                                            services: prev.services.filter((_: any, i: number) => i !== index)
+                                        }))}
                                         className="text-red-600 hover:text-red-800"
                                     >
                                         <Minus className="w-4 h-4" />
@@ -94,15 +94,21 @@ const ServicesTab: React.FC<ServicesTabProps> = ({
                                 <div className="grid grid-cols-2 gap-4 mb-4">
                                     <InputField
                                         label="Service Name"
-                                        value={service.name || ''}
-                                        onChange={(value: string) => updateArrayItem('services', index, 'name', value)}
+                                        value={service.name || ''}                                        
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            services: prev.services.map((item: Services, i: number) => i === index ? { ...item, name: value } : item)
+                                        }))}
                                         placeholder="MyAppService"
                                         description="Internal service name"
                                     />
                                     <InputField
                                         label="Service Path"
-                                        value={service.path || ''}
-                                        onChange={(value: string) => updateArrayItem('services', index, 'path', value)}
+                                        value={service.path || ''}                                        
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            services: prev.services.map((item: Services, i: number) => i === index ? { ...item, path: value } : item)
+                                        }))}
                                         placeholder="%PAL:AppDir%\service.exe"
                                         description="Path to service executable"
                                     />
@@ -111,8 +117,11 @@ const ServicesTab: React.FC<ServicesTabProps> = ({
                                     <InputField
                                         label="Service Type"
                                         type="select"
-                                        value={service.type || 'own'}
-                                        onChange={(value: string) => updateArrayItem('services', index, 'type', value)}
+                                        value={service.type || 'own'}                                        
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            services: prev.services.map((item: Services, i: number) => i === index ? { ...item, type: value } : item)
+                                        }))}
                                         placeholder={[
                                             { value: 'own', label: 'Own Process' },
                                             { value: 'share', label: 'Shared Process' },
@@ -126,8 +135,11 @@ const ServicesTab: React.FC<ServicesTabProps> = ({
                                     <InputField
                                         label="Start Type"
                                         type="select"
-                                        value={service.start || 'demand'}
-                                        onChange={(value: string) => updateArrayItem('services', index, 'start', value)}
+                                        value={service.start || 'demand'}                                        
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            services: prev.services.map((item: Services, i: number) => i === index ? { ...item, start: value } : item)
+                                        }))}
                                         placeholder={[
                                             { value: 'boot', label: 'Boot' },
                                             { value: 'system', label: 'System' },
@@ -141,8 +153,11 @@ const ServicesTab: React.FC<ServicesTabProps> = ({
                                     <InputField
                                         label="If Exists"
                                         type="select"
-                                        value={service.ifExists || 'skip'}
-                                        onChange={(value: string) => updateArrayItem('services', index, 'ifExists', value)}
+                                        value={service.ifExists || 'skip'}                                        
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            services: prev.services.map((item: Services, i: number) => i === index ? { ...item, ifExists: value } : item)
+                                        }))}
                                         placeholder={[
                                             { value: 'skip', label: 'Skip' },
                                             { value: 'replace', label: 'Replace' }
@@ -153,10 +168,69 @@ const ServicesTab: React.FC<ServicesTabProps> = ({
                                 <div className="mt-4">
                                     <InputField
                                         label="Dependencies"
-                                        value={service.depend || ''}
-                                        onChange={(value: string) => updateArrayItem('services', index, 'depend', value)}
+                                        value={service.depend || ''}                                        
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            services: prev.services.map((item: Services, i: number) => i === index ? { ...item, depend: value } : item)
+                                        }))}
                                         placeholder="Service1/Service2"
                                         description="Service dependencies separated by forward slash"
+                                    />
+                                </div>
+                                <div className="mt-4">
+                                    <InputField
+                                        label="Description"
+                                        value={service.description || ''}
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            services: prev.services.map((item: Services, i: number) => i === index ? { ...item, description: value } : item)
+                                        }))}
+                                        placeholder="My App's background service"
+                                        description="Display description for the service"
+                                    />
+                                </div>
+                                <div className="grid grid-cols-3 gap-4 mt-4">
+                                    <InputField
+                                        label="Account"
+                                        value={service.account || ''}
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            services: prev.services.map((item: Services, i: number) => i === index ? { ...item, account: value } : item)
+                                        }))}
+                                        placeholder="NT AUTHORITY\LocalService"
+                                        description="Account to run service under"
+                                    />
+                                    <InputField
+                                        label="Password"
+                                        type="password"
+                                        value={service.password || ''}
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            services: prev.services.map((item: Services, i: number) => i === index ? { ...item, password: value } : item)
+                                        }))}
+                                        placeholder="Leave blank if not needed"
+                                        description="Password for the account"
+                                    />
+                                    <InputField
+                                        label="Timeout (ms)"
+                                        value={service.timeout || 30000}
+                                        onChange={(value: string) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            services: prev.services.map((item: Services, i: number) => i === index ? { ...item, timeout: parseInt(value) || 0 } : item)
+                                        }))}
+                                        placeholder="30000"
+                                        description="Timeout for service operations"
+                                    />
+                                </div>
+                                <div className="mt-4">
+                                    <CheckboxField
+                                        label="Critical"
+                                        checked={service.critical}
+                                        onChange={(checked: boolean) => setConfig((prev: any) => ({
+                                            ...prev,
+                                            services: prev.services.map((item: Services, i: number) => i === index ? { ...item, critical: checked } : item)
+                                        }))}
+                                        description="If true, launcher will fail if service cannot start"
                                     />
                                 </div>
                             </CardContent>
@@ -165,20 +239,18 @@ const ServicesTab: React.FC<ServicesTabProps> = ({
                 )}
             </div>
 
-            <Card className="bg-yellow-50 border-yellow-200">
+            <Card className="bg-blue-50 border-blue-200">
                 <CardContent className="pt-4">
                     <div className="flex items-center">
-                        <AlertCircle className="w-5 h-5 text-yellow-500 mr-2" />
-                        <h4 className="text-sm font-medium text-yellow-800">Services & DLL Registration Warning</h4>
+                        <Settings className="w-5 h-5 text-blue-500 mr-2" />
+                        <h4 className="text-sm font-medium text-blue-800">Windows Services Help</h4>
                     </div>
-                    <p className="text-sm text-yellow-700 mt-1">
-                        Services and DLL registration require careful configuration and may require administrator privileges.
-                        Ensure you understand the security implications before enabling these features.
-                    </p>
-                    <div className="mt-3 text-sm text-yellow-700">
-                        <p><strong>Services:</strong> Will be installed/started when the app launches and properly cleaned up when it exits.</p>
-                        <p><strong>DLL Registration:</strong> COM components will be registered during startup and unregistered during cleanup.</p>
-                        <p><strong>Task Cleanup:</strong> Windows scheduled tasks created by the app will be removed on exit.</p>
+                    <div className="text-sm text-blue-700 mt-2 space-y-1">
+                        <p>This section allows you to install, start, stop, and remove Windows services required by your application.</p>
+                        <p><strong>Service Path:</strong> The path to the service executable. Use PAL variables like <code>%PAL:AppDir%</code> for portability.</p>
+                        <p><strong>Start Type:</strong> 'Automatic' services start with Windows, while 'Manual' (demand) services must be started by an application or user.</p>
+                        <p><strong>Account:</strong> Services can run under different user accounts, like `NT AUTHORITY\LocalService` or `NT AUTHORITY\System` for different privilege levels.</p>
+                        <p><strong>Activation:</strong> Ensure the <code>Windows Services</code> feature is enabled in the <em>Features</em> tab for these settings to take effect.</p>
                     </div>
                 </CardContent>
             </Card>
